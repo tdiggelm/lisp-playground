@@ -8,6 +8,7 @@
 - create environment (use ut_hash for symbol lut)
 - error handling: what happens when wrong type is in argument?
 - maybe implement NDT_NUMBER type containing union of int64_t + double that can be passes by-value from sum function
+- implement simple parser to evaluate sexpr
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING} NDT_TYPE;
