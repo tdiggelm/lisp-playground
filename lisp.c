@@ -6,6 +6,7 @@
 /* TODO
 - create ndt_nil (pair(NULL, NULL)), ndt_true (atom("#t"))
 - create environment (use ut_hash for symbol lut)
+- error handling: what happens when wrong type is in argument?
 */
 
 
@@ -216,7 +217,7 @@ void print(const NDT_OBJECT* obj)
     }
 }
 
-long long __ndt_sum_integer(const NDT_OBJECT* args)
+long long ndt_sum_integer(const NDT_OBJECT* args)
 {
     assert(ndt_is_cons(args) 
         || ndt_is_nil(args) || ndt_is_integer(args) || ndt_is_decimal(args));
@@ -232,13 +233,38 @@ long long __ndt_sum_integer(const NDT_OBJECT* args)
         long long num;
         if (ndt_is_integer(car)) num = ndt_integer(car);
         else if (ndt_is_decimal(car)) num = ndt_decimal(car);
-        return num + __ndt_sum_integer(ndt_cdr(args));  
+        return num + ndt_sum_integer(ndt_cdr(args));  
     }
 }
 
+double ndt_sum_decimal(const NDT_OBJECT* args)
+{
+    assert(ndt_is_cons(args) 
+        || ndt_is_nil(args) || ndt_is_integer(args) || ndt_is_decimal(args));
+    
+    if (args == NULL) { // create functions is_nil, is_integer, is_pair, etc.
+        return 0;
+    } else if (args->type == NDT_TYPE_INTEGER) {
+        return ndt_integer(args);
+    } else if (args->type == NDT_TYPE_DECIMAL) {
+        return ndt_decimal(args);
+    } else {
+        const NDT_OBJECT* car = ndt_car(args);
+        double num;
+        if (ndt_is_integer(car)) num = ndt_integer(car);
+        else if (ndt_is_decimal(car)) num = ndt_decimal(car);
+        return num + ndt_sum_decimal(ndt_cdr(args));  
+    }
+}
+
+// infer type from first argument
 NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
 {
-    return ndt_make_integer(__ndt_sum_integer(args));
+    if (ndt_is_cons(args) && ndt_is_decimal(ndt_car(args))) {
+        return ndt_make_decimal(ndt_sum_decimal(args));
+    } else {
+        return ndt_make_integer(ndt_sum_integer(args));
+    }
 }
 
 int main()
@@ -255,7 +281,7 @@ int main()
     long long sum = 0;
     for (i = 0; i < 10000; i++)
     {
-        NDT_OBJECT* arg = ndt_make_cons(ndt_make_decimal(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)));
+        NDT_OBJECT* arg = ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)));
         //print(arg);
         //printf("\n");
         NDT_OBJECT* ret = ndt_sum(arg);
