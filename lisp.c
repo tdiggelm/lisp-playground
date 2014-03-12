@@ -23,32 +23,32 @@ typedef struct object {
 typedef struct ndt_decimal {
     NDT_TYPE type;
     double ndt_decimal;
-} DECIMAL;
+} NDT_DECIMAL;
 
 typedef struct ndt_integer {
     NDT_TYPE type;
     long long ndt_integer;
-} INTEGER;
+} NDT_INTEGER;
 
 typedef struct ndt_string {
     NDT_TYPE type;
     const char* ndt_string;
-} STRING;
+} NDT_STRING;
 
 typedef struct ndt_symbol {
     NDT_TYPE type;
     const char* ndt_symbol;
-} SYMBOL;
+} NDT_SYMBOL;
 
 typedef struct pair {
     NDT_TYPE type;
     const NDT_OBJECT* ndt_car;
     const NDT_OBJECT* ndt_cdr;
-} PAIR;
+} NDT_PAIR;
 
 NDT_OBJECT* ndt_make_integer(long long ndt_integer)
 {
-    INTEGER* obj = malloc(sizeof(INTEGER));
+    NDT_INTEGER* obj = malloc(sizeof(NDT_INTEGER));
     obj->type = NDT_TYPE_INTEGER;
     obj->ndt_integer = ndt_integer;
     return (NDT_OBJECT*)obj;
@@ -56,7 +56,7 @@ NDT_OBJECT* ndt_make_integer(long long ndt_integer)
 
 NDT_OBJECT* ndt_make_symbol(const char* ndt_symbol)
 {
-    SYMBOL* obj = malloc(sizeof(SYMBOL));
+    NDT_SYMBOL* obj = malloc(sizeof(NDT_SYMBOL));
     obj->type = NDT_TYPE_SYMBOL;
     obj->ndt_symbol = strdup(ndt_symbol);
     return (NDT_OBJECT*)obj;
@@ -64,7 +64,7 @@ NDT_OBJECT* ndt_make_symbol(const char* ndt_symbol)
 
 NDT_OBJECT* ndt_make_string(const char* ndt_string)
 {
-    STRING* obj = malloc(sizeof(STRING));
+    NDT_STRING* obj = malloc(sizeof(NDT_STRING));
     obj->type = NDT_TYPE_STRING;
     obj->ndt_string = strdup(ndt_string);
     return (NDT_OBJECT*)obj;
@@ -72,7 +72,7 @@ NDT_OBJECT* ndt_make_string(const char* ndt_string)
 
 NDT_OBJECT* ndt_make_decimal(double ndt_decimal)
 {
-    DECIMAL* obj = malloc(sizeof(DECIMAL));
+    NDT_DECIMAL* obj = malloc(sizeof(NDT_DECIMAL));
     obj->type = NDT_TYPE_DECIMAL;
     obj->ndt_decimal = ndt_decimal;
     return (NDT_OBJECT*)obj;
@@ -80,7 +80,7 @@ NDT_OBJECT* ndt_make_decimal(double ndt_decimal)
 
 NDT_OBJECT* ndt_make_cons(const NDT_OBJECT* ndt_car, const NDT_OBJECT* ndt_cdr)
 {
-    PAIR* obj = malloc(sizeof(PAIR));
+    NDT_PAIR* obj = malloc(sizeof(NDT_PAIR));
     obj->type = NDT_TYPE_PAIR;
     obj->ndt_car = ndt_car;
     obj->ndt_cdr = ndt_cdr;
@@ -90,37 +90,37 @@ NDT_OBJECT* ndt_make_cons(const NDT_OBJECT* ndt_car, const NDT_OBJECT* ndt_cdr)
 long long ndt_integer(const NDT_OBJECT* obj)
 {
     assert(obj->type == NDT_TYPE_INTEGER);
-    return ((INTEGER*)obj)->ndt_integer;
+    return ((NDT_INTEGER*)obj)->ndt_integer;
 }
 
 double ndt_decimal(const NDT_OBJECT* obj)
 {
     assert(obj->type == NDT_TYPE_DECIMAL);
-    return ((DECIMAL*)obj)->ndt_decimal;
+    return ((NDT_DECIMAL*)obj)->ndt_decimal;
 }
 
 const char* ndt_symbol(const NDT_OBJECT* obj)
 {
     assert(obj->type == NDT_TYPE_SYMBOL);
-    return ((SYMBOL*)obj)->ndt_symbol;
+    return ((NDT_SYMBOL*)obj)->ndt_symbol;
 }
 
 const char* ndt_string(const NDT_OBJECT* obj)
 {
     assert(obj->type == NDT_TYPE_STRING);
-    return ((STRING*)obj)->ndt_string;
+    return ((NDT_STRING*)obj)->ndt_string;
 }
 
 const NDT_OBJECT* ndt_car(const NDT_OBJECT* obj)
 {
     assert(obj->type == NDT_TYPE_PAIR);
-    return ((PAIR*)obj)->ndt_car;
+    return ((NDT_PAIR*)obj)->ndt_car;
 }
 
 const NDT_OBJECT* ndt_cdr(const NDT_OBJECT* obj)
 {
     assert(obj->type == NDT_TYPE_PAIR);
-    return ((PAIR*)obj)->ndt_cdr;
+    return ((NDT_PAIR*)obj)->ndt_cdr;
 }
 
 void ndt_release(NDT_OBJECT* obj)
@@ -189,7 +189,7 @@ void print(const NDT_OBJECT* obj)
     }
 }
 
-long long __ndt_sum(const NDT_OBJECT* args)
+long long __ndt_sum_integer(const NDT_OBJECT* args)
 {
     if (args == NULL) { // create functions is_nil, is_integer, is_pair, etc.
         return 0;
@@ -197,13 +197,13 @@ long long __ndt_sum(const NDT_OBJECT* args)
         return ndt_integer(args);
     } else {
         return ndt_integer(ndt_car(args)) 
-            + __ndt_sum(ndt_cdr(args));  
+            + __ndt_sum_integer(ndt_cdr(args));  
     }
 }
 
 NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
 {
-    return ndt_make_integer(__ndt_sum(args));
+    return ndt_make_integer(__ndt_sum_integer(args));
 }
 
 int main()
