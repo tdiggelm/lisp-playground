@@ -315,7 +315,12 @@ NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
         assert(ndt_is_symbol(car)); // instead of assertion return error here
         if (strcmp(ndt_symbol(car), "+") == 0) { // use hashtable for lut
             return ndt_sum(ndt_cdr(obj));
+        } else if (strcmp(ndt_symbol(car), ".+") == 0) {
+            return ndt_make_decimal(ndt_sum_decimal(ndt_cdr(obj)));
+        } else {
+            assert(!"unhandled symbol in ndt_eval");
         }
+        
     } else {
         assert(!"unhandled type in ndt_eval");
     }
@@ -323,6 +328,8 @@ NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
 
 #define NDT_EVAL(stmt) do { \
     NDT_OBJECT* obj = (stmt); \
+    printf("> "); \
+    ndt_print(obj); \
     NDT_OBJECT* ret = ndt_eval(obj); \
     ndt_release(obj); \
     ndt_print(ret); \
@@ -360,6 +367,8 @@ int main()
     
     // (+ 5 10 20)
     NDT_EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
+    
+    NDT_EVAL(ndt_make_cons(ndt_make_symbol(".+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
         
     NDT_EVAL(ndt_make_integer(123));
     
