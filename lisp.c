@@ -10,7 +10,6 @@
 - maybe implement NDT_NUMBER type containing union of int64_t + double that can be passes by-value from sum function
 */
 
-
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING} NDT_TYPE;
 
 typedef struct object {
@@ -294,4 +293,22 @@ int main()
     }
     
     printf("%lld\n", sum);
+}
+
+// (link (add "hello" "world") (add "bye" "bye"))
+// (link $1 $2)
+
+NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
+{
+    if (is_decimal(obj) || is_integer(obj) || is_string(obj)) {
+        return obj;
+    } else if (is_pair(obj)) {
+        NDT_OBJECT* car = ndt_car(obj);
+        assert(ndt_is_symbol(car));
+        if (strcmp(ndt_symbol(car), "+") == 0) {
+            return ndt_sum(ndt_cdr(obj));
+        }
+    } else {
+        assert(!"unhandled type in ndt_eval");
+    }
 }
