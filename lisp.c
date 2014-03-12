@@ -3,16 +3,11 @@
 #include <string.h>
 #include <assert.h>
 
-/*typedef enum {NDT_TYPE_INTEGER, NDT_TYPE_DECIMAL, NDT_TYPE_STRING, NDT_TYPE_NIL} type_e;
+/* TODO
+- create ndt_nil (pair(NULL, NULL)), ndt_true (atom("#t"))
+- create environment (use ut_hash for symbol lut)
+*/
 
-typedef struct obj {
-    type_e type;
-    union {
-        long long ndt_integer;
-        double ndt_decimal;
-        const char* ndt_string;
-    } val;
-} obj;*/
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING} NDT_TYPE;
 
@@ -123,6 +118,38 @@ const NDT_OBJECT* ndt_cdr(const NDT_OBJECT* obj)
     return ((NDT_PAIR*)obj)->ndt_cdr;
 }
 
+int ndt_is_nil(const NDT_OBJECT* obj)
+{
+    return (obj == NULL 
+        || (obj->type == NDT_TYPE_PAIR 
+            && ndt_car(obj) == NULL && ndt_cdr(obj) == NULL));
+}
+
+int ndt_is_integer(const NDT_OBJECT* obj)
+{
+    return (obj != NULL && obj->type == NDT_TYPE_INTEGER);
+}
+
+int ndt_is_decimal(const NDT_OBJECT* obj)
+{
+    return (obj != NULL && obj->type == NDT_TYPE_DECIMAL);
+}
+
+int ndt_is_string(const NDT_OBJECT* obj)
+{
+    return (obj != NULL && obj->type == NDT_TYPE_STRING);
+}
+
+int ndt_is_symbol(const NDT_OBJECT* obj)
+{
+    return (obj != NULL && obj->type == NDT_TYPE_SYMBOL);
+}
+
+int ndt_is_cons(const NDT_OBJECT* obj)
+{
+    return (obj != NULL && obj->type == NDT_TYPE_PAIR);
+}
+
 void ndt_release(NDT_OBJECT* obj)
 {
     if (obj == NULL) {
@@ -191,13 +218,21 @@ void print(const NDT_OBJECT* obj)
 
 long long __ndt_sum_integer(const NDT_OBJECT* args)
 {
+    assert(ndt_is_cons(args) 
+        || ndt_is_nil(args) || ndt_is_integer(args) || ndt_is_decimal(args));
+    
     if (args == NULL) { // create functions is_nil, is_integer, is_pair, etc.
         return 0;
     } else if (args->type == NDT_TYPE_INTEGER) {
         return ndt_integer(args);
+    } else if (args->type == NDT_TYPE_DECIMAL) {
+        return ndt_decimal(args);
     } else {
-        return ndt_integer(ndt_car(args)) 
-            + __ndt_sum_integer(ndt_cdr(args));  
+        const NDT_OBJECT* car = ndt_car(args);
+        long long num;
+        if (ndt_is_integer(car)) num = ndt_integer(car);
+        else if (ndt_is_decimal(car)) num = ndt_decimal(car);
+        return num + __ndt_sum_integer(ndt_cdr(args));  
     }
 }
 
@@ -217,24 +252,19 @@ int main()
         ndt_release(obj);
     }
     
-    NDT_OBJECT* arg = ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)));
-    print(arg);
-    printf("\n");
-    NDT_OBJECT* ret = ndt_sum(arg);
-    print(ret);
-    printf("\n");
-    ndt_release(ret);
-    ndt_release(arg);
+    long long sum = 0;
+    for (i = 0; i < 10000; i++)
+    {
+        NDT_OBJECT* arg = ndt_make_cons(ndt_make_decimal(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)));
+        //print(arg);
+        //printf("\n");
+        NDT_OBJECT* ret = ndt_sum(arg);
+        sum += ndt_integer(ret);
+        //print(ret);
+        //printf("\n");
+        ndt_release(ret);
+        ndt_release(arg);
+    }
     
-    /*obj arr[] = {
-        {.type = NDT_TYPE_NIL},
-        {.type = NDT_TYPE_INTEGER, .val.ndt_integer = 1},
-        {.type = NDT_TYPE_INTEGER, .val.ndt_integer = 2},
-        {.type = NDT_TYPE_INTEGER, .val.ndt_integer = 3},
-        {.type = NDT_TYPE_DECIMAL, .val.ndt_decimal = 3.14159},
-        {.type = NDT_TYPE_STRING, .val.ndt_string = "Hello World!"},
-        {.type = NDT_TYPE_STRING, .val.ndt_string = "Bla bla bla!"}
-    };
-    print_arr(arr, 7);
-    return 0;*/
+    printf("%lld\n", sum);
 }
