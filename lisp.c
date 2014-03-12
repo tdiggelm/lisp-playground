@@ -7,6 +7,7 @@
 - create ndt_nil (pair(NULL, NULL)), ndt_true (atom("#t"))
 - create environment (use ut_hash for symbol lut)
 - error handling: what happens when wrong type is in argument?
+- maybe implement NDT_NUMBER type containing union of int64_t + double that can be passes by-value from sum function
 */
 
 
