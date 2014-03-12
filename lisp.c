@@ -189,34 +189,21 @@ void print(const NDT_OBJECT* obj)
     }
 }
 
-/*void print_arr(obj* arr, size_t n)
+long long __ndt_sum(const NDT_OBJECT* args)
 {
-    int i;
-    for (i = 0; i < n; i++) {
-        switch (arr[i].type) {
-            case NDT_TYPE_INTEGER:
-                printf("(ndt_integer) %lld\n", (arr[i].val.ndt_integer));
-                break;
-            case NDT_TYPE_DECIMAL:
-                printf("(ndt_decimal) %lf\n", (arr[i].val.ndt_decimal));
-                break;
-            case NDT_TYPE_STRING:
-                printf("(ndt_string) %s\n", (arr[i].val.ndt_string));
-                break;
-            case NDT_TYPE_NIL:
-                printf("(nil)\n");
-                break;
-            default:
-                printf("unkown type\n");
-        }
+    if (args == NULL) { // create functions is_nil, is_integer, is_pair, etc.
+        return 0;
+    } else if (args->type == NDT_TYPE_INTEGER) {
+        return ndt_integer(args);
+    } else {
+        return ndt_integer(ndt_car(args)) 
+            + __ndt_sum(ndt_cdr(args));  
     }
-}*/
+}
 
 NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
 {
-    long long sum = 0;
-    // recusively loop args
-    return ndt_make_integer(sum);
+    return ndt_make_integer(__ndt_sum(args));
 }
 
 int main()
@@ -230,10 +217,14 @@ int main()
         ndt_release(obj);
     }
     
-    NDT_OBJECT* ret = ndt_sum(ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)));
+    NDT_OBJECT* arg = ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)));
+    print(arg);
+    printf("\n");
+    NDT_OBJECT* ret = ndt_sum(arg);
     print(ret);
     printf("\n");
     ndt_release(ret);
+    ndt_release(arg);
     
     /*obj arr[] = {
         {.type = NDT_TYPE_NIL},
