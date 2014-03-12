@@ -179,7 +179,37 @@ void ndt_release(NDT_OBJECT* obj)
     free((void*)obj);
 }
 
-void print(const NDT_OBJECT* obj)
+NDT_OBJECT* ndt_dup(const NDT_OBJECT* obj)
+{
+    if (obj == NULL) {
+        printf("nil");
+        return NULL;
+    }
+    
+    switch(obj->type) {
+        case NDT_TYPE_INTEGER: {
+            return ndt_make_integer(ndt_integer(obj));
+        }
+        case NDT_TYPE_DECIMAL: {
+            return ndt_make_decimal(ndt_decimal(obj));
+        }
+        case NDT_TYPE_STRING: {
+            return ndt_make_string(ndt_string(obj));
+        }
+        case NDT_TYPE_SYMBOL: {
+            return ndt_make_symbol(ndt_symbol(obj));
+            break;
+        }
+        case NDT_TYPE_PAIR: {
+            return ndt_make_cons(ndt_dup(ndt_car(obj)), ndt_dup(ndt_cdr(obj)));
+        }
+        default: {
+            assert(!"unkown type in ndt_dup\n");
+        }
+    }
+}
+
+void __ndt_print(const NDT_OBJECT* obj)
 {
     if (obj == NULL) {
         printf("nil");
@@ -205,16 +235,22 @@ void print(const NDT_OBJECT* obj)
         }
         case NDT_TYPE_PAIR: {
             printf("(");
-            print(ndt_car(obj));
+            __ndt_print(ndt_car(obj));
             printf(" . ");
-            print(ndt_cdr(obj));
+            __ndt_print(ndt_cdr(obj));
             printf(")");
             break;
         }
         default: {
-            printf("unkown type\n");
+            assert(!"unkown type in __ndt_print\n");
         }
     }
+}
+
+void ndt_print(const NDT_OBJECT* obj)
+{
+    __ndt_print(obj);
+    printf("\n");
 }
 
 long long ndt_sum_integer(const NDT_OBJECT* args)
@@ -267,14 +303,39 @@ NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
     }
 }
 
+// (link (add "hello" "world") (add "bye" "bye"))
+// (link $1 $2)
+
+NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
+{
+    if (ndt_is_decimal(obj) || ndt_is_integer(obj) || ndt_is_string(obj)) {
+        return ndt_dup(obj);
+    } else if (ndt_is_cons(obj)) {
+        const NDT_OBJECT* car = ndt_car(obj);
+        assert(ndt_is_symbol(car)); // instead of assertion return error here
+        if (strcmp(ndt_symbol(car), "+") == 0) { // use hashtable for lut
+            return ndt_sum(ndt_cdr(obj));
+        }
+    } else {
+        assert(!"unhandled type in ndt_eval");
+    }
+}
+
+#define NDT_EVAL(stmt) do { \
+    NDT_OBJECT* obj = (stmt); \
+    NDT_OBJECT* ret = ndt_eval(obj); \
+    ndt_release(obj); \
+    ndt_print(ret); \
+    ndt_release(ret); \
+} while(0)
+
 int main()
 {
     size_t i;
     //for (i = 0; i < 10000; i++)
     {
         NDT_OBJECT* obj = ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_string("Hello World!"), ndt_make_cons(ndt_make_decimal(3.14159), ndt_make_cons(ndt_make_integer(100), NULL))));
-        print(obj);
-        printf("\n");
+        ndt_print(obj);
         ndt_release(obj);
     }
     
@@ -282,33 +343,25 @@ int main()
     for (i = 0; i < 10000; i++)
     {
         NDT_OBJECT* arg = ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)));
-        //print(arg);
+        //ndt_print(arg);
         //printf("\n");
         NDT_OBJECT* ret = ndt_sum(arg);
         sum += ndt_integer(ret);
-        //print(ret);
+        //ndt_print(ret);
         //printf("\n");
         ndt_release(ret);
         ndt_release(arg);
     }
     
     printf("%lld\n", sum);
-}
-
-// (link (add "hello" "world") (add "bye" "bye"))
-// (link $1 $2)
-
-NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
-{
-    if (is_decimal(obj) || is_integer(obj) || is_string(obj)) {
-        return obj;
-    } else if (is_pair(obj)) {
-        NDT_OBJECT* car = ndt_car(obj);
-        assert(ndt_is_symbol(car));
-        if (strcmp(ndt_symbol(car), "+") == 0) {
-            return ndt_sum(ndt_cdr(obj));
-        }
-    } else {
-        assert(!"unhandled type in ndt_eval");
-    }
+    
+    // (+ (+ 1 2) 3)
+    // ...
+    
+    // (+ 5 10 20)
+    NDT_EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
+        
+    NDT_EVAL(ndt_make_integer(123));
+    
+    NDT_EVAL(ndt_make_string("Hello World!"));
 }
