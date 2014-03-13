@@ -272,31 +272,27 @@ void ndt_print(const NDT_OBJECT* obj)
 
 NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj);
 
-NDT_OBJECT* ndt_list(const NDT_OBJECT* args)
+NDT_OBJECT* ndt_list(const NDT_OBJECT* sexp)
 {
-    if (ndt_is_nil(args)) {
+    if (ndt_is_nil(sexp)) {
         return NULL;
-    } else if (ndt_is_cons(args)) {
-        if (ndt_is_symbol(ndt_car(args))) {
-            return ndt_eval(args);
-        } else {
-            return ndt_make_cons(ndt_list(ndt_car(args)),
-                ndt_list(ndt_cdr(args)));
-        }
+    } else if (ndt_is_cons(sexp)) {
+        return ndt_make_cons(ndt_list(ndt_car(sexp)),
+            ndt_list(ndt_cdr(sexp)));
     } else {
-        return ndt_dup(args); 
+        return ndt_dup(sexp); 
     }
 }
 
-NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
+NDT_OBJECT* ndt_sum(const NDT_OBJECT* sexp)
 {
-    if (ndt_is_nil(args)) {
+    if (ndt_is_nil(sexp)) {
         return ndt_make_integer(0);
-    } else if (ndt_is_integer(args) || ndt_is_decimal(args)) {
-        return ndt_dup(args);
-    } else if (ndt_is_cons(args)) {
-        const NDT_OBJECT* a = ndt_car(args);
-        NDT_OBJECT* b = ndt_sum(ndt_cdr(args));
+    } else if (ndt_is_integer(sexp) || ndt_is_decimal(sexp)) {
+        return ndt_dup(sexp);
+    } else if (ndt_is_cons(sexp)) {
+        const NDT_OBJECT* a = ndt_car(sexp);
+        NDT_OBJECT* b = ndt_sum(ndt_cdr(sexp));
         NDT_OBJECT* sum;
         if (ndt_is_decimal(a) && ndt_is_decimal(b)) {
             sum = ndt_make_decimal(ndt_decimal(a)+ndt_decimal(b));   
@@ -316,17 +312,17 @@ NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
     }
 }
 
-NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj)
+NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
 {
-    if (ndt_is_decimal(obj) || ndt_is_integer(obj) || ndt_is_string(obj)) {
-        return ndt_dup(obj);
-    } else if (ndt_is_cons(obj)) {
-        const NDT_OBJECT* car = ndt_car(obj);
+    if (ndt_is_decimal(sexp) || ndt_is_integer(sexp) || ndt_is_string(sexp)) {
+        return ndt_dup(sexp);
+    } else if (ndt_is_cons(sexp)) {
+        const NDT_OBJECT* car = ndt_car(sexp);
         if (ndt_is_symbol(car)) {
             if (strcmp(ndt_symbol(car), "+") == 0) { // use hashtable for lut
-                return ndt_sum(ndt_cdr(obj));
+                return ndt_sum(ndt_cdr(sexp));
             } else if (strcmp(ndt_symbol(car), "list") == 0) {
-                return ndt_list(ndt_cdr(obj));
+                return ndt_list(ndt_cdr(sexp));
             } else {
                 assert(!"unhandled symbol in ndt_eval");
             }
@@ -336,11 +332,11 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj)
     }
 }
 
-NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
+NDT_OBJECT* ndt_make_sexp(const NDT_OBJECT* arr[], size_t n)
 {
     if (arr == NULL) return NULL;
     if (n > 1) {
-        return ndt_make_cons(arr[0], ndt_make_list(&arr[1], n-1));
+        return ndt_make_cons(arr[0], ndt_make_sexp(&arr[1], n-1));
     } else {
         return ndt_make_cons(arr[0], NULL);
     }
@@ -362,7 +358,7 @@ NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
 #define DEC(x) ndt_make_decimal(x)
 #define SEXPR(...) ({ \
     const NDT_OBJECT* arr[] = {__VA_ARGS__}; \
-    ndt_make_list(arr, sizeof(arr)/sizeof(NDT_OBJECT*)); \
+    ndt_make_sexp(arr, sizeof(arr)/sizeof(NDT_OBJECT*)); \
 })
    
 int main()
