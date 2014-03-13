@@ -215,6 +215,17 @@ NDT_OBJECT* ndt_dup(const NDT_OBJECT* obj)
     }
 }
 
+NDT_OBJECT* ndt_append(NDT_OBJECT* sexp1, const NDT_OBJECT* sexp2)
+{
+    if (ndt_is_nil(sexp1) || ndt_is_nil(sexp2)) return sexp1;
+    const NDT_OBJECT* obj = sexp1;
+    while(!ndt_is_nil(ndt_cdr(obj))) {
+        obj = ndt_cdr(obj);
+    }
+    ((NDT_PAIR*)obj)->ndt_cdr = sexp2;
+    return sexp1;
+}
+
 void __ndt_print(const NDT_OBJECT* obj)
 {
     if (obj == NULL) {
@@ -284,26 +295,22 @@ NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
     } else if (ndt_is_integer(args) || ndt_is_decimal(args)) {
         return ndt_dup(args);
     } else if (ndt_is_cons(args)) {
-        if (ndt_is_symbol(ndt_car(args))) {
-            return ndt_eval(args);
+        const NDT_OBJECT* a = ndt_car(args);
+        NDT_OBJECT* b = ndt_sum(ndt_cdr(args));
+        NDT_OBJECT* sum;
+        if (ndt_is_decimal(a) && ndt_is_decimal(b)) {
+            sum = ndt_make_decimal(ndt_decimal(a)+ndt_decimal(b));   
+        } else if (ndt_is_integer(a) && ndt_is_decimal(b)) {
+            sum = ndt_make_decimal(ndt_integer(a)+ndt_decimal(b));   
+        } else if (ndt_is_decimal(a) && ndt_is_integer(b)) {
+            sum = ndt_make_decimal(ndt_decimal(a)+ndt_integer(b));   
+        } else if (ndt_is_integer(a) && ndt_is_integer(b)) {
+            sum = ndt_make_integer(ndt_integer(a)+ndt_integer(b));   
         } else {
-            const NDT_OBJECT* a = ndt_car(args);
-            NDT_OBJECT* b = ndt_sum(ndt_cdr(args));
-            NDT_OBJECT* sum;
-            if (ndt_is_decimal(a) && ndt_is_decimal(b)) {
-                sum = ndt_make_decimal(ndt_decimal(a)+ndt_decimal(b));   
-            } else if (ndt_is_integer(a) && ndt_is_decimal(b)) {
-                sum = ndt_make_decimal(ndt_integer(a)+ndt_decimal(b));   
-            } else if (ndt_is_decimal(a) && ndt_is_integer(b)) {
-                sum = ndt_make_decimal(ndt_decimal(a)+ndt_integer(b));   
-            } else if (ndt_is_integer(a) && ndt_is_integer(b)) {
-                sum = ndt_make_integer(ndt_integer(a)+ndt_integer(b));   
-            } else {
-                assert(!"unhandled type in ndt_sum (inner)");
-            }
-            ndt_release(b);
-            return sum;   
+            assert(!"unhandled type in ndt_sum (inner)");
         }
+        ndt_release(b);
+        return sum;   
     } else {
         assert(!"unhandled type in ndt_sum (outer)");
     }
@@ -315,13 +322,14 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj)
         return ndt_dup(obj);
     } else if (ndt_is_cons(obj)) {
         const NDT_OBJECT* car = ndt_car(obj);
-        assert(ndt_is_symbol(car)); // instead of assertion return error here
-        if (strcmp(ndt_symbol(car), "+") == 0) { // use hashtable for lut
-            return ndt_sum(ndt_cdr(obj));
-        } else if (strcmp(ndt_symbol(car), "list") == 0) {
-            return ndt_list(ndt_cdr(obj));
-        } else {
-            assert(!"unhandled symbol in ndt_eval");
+        if (ndt_is_symbol(car)) {
+            if (strcmp(ndt_symbol(car), "+") == 0) { // use hashtable for lut
+                return ndt_sum(ndt_cdr(obj));
+            } else if (strcmp(ndt_symbol(car), "list") == 0) {
+                return ndt_list(ndt_cdr(obj));
+            } else {
+                assert(!"unhandled symbol in ndt_eval");
+            }
         }
     } else {
         assert(!"unhandled type in ndt_eval");
@@ -352,7 +360,7 @@ NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
 #define STR(x) ndt_make_string(x)
 #define INT(x) ndt_make_integer(x)
 #define DEC(x) ndt_make_decimal(x)
-#define LIST(...) ({ \
+#define SEXPR(...) ({ \
     const NDT_OBJECT* arr[] = {__VA_ARGS__}; \
     ndt_make_list(arr, sizeof(arr)/sizeof(NDT_OBJECT*)); \
 })
@@ -384,8 +392,13 @@ int main()
     EVAL(ndt_make_string("Hello World!"));
     
     // (+ 3.14159 10)
-    EVAL(LIST(SYM("+"), DEC(3.14159), INT(10)));
+    EVAL(SEXPR(SYM("+"), DEC(3.14159), INT(10)));
     
+    EVAL(SEXPR(SYM("+"), DEC(3.14159), INT(10)));
+    
+    EVAL(ndt_append(SEXPR(SYM("list"), DEC(3.14159), INT(10)), 
+        SEXPR(DEC(23), INT(24))));
+
     // (list (+ (+ 1 2) 3 4))
     //EVAL(LIST(SYM("+"), LIST(SYM("+"), INT(1), INT(2)), INT(3), INT(4)));
 }
