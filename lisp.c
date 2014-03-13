@@ -299,18 +299,15 @@ NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
             } else if (ndt_is_integer(a) && ndt_is_integer(b)) {
                 sum = ndt_make_integer(ndt_integer(a)+ndt_integer(b));   
             } else {
-                assert(!"unhandled type in ndt_sum");
+                assert(!"unhandled type in ndt_sum (inner)");
             }
             ndt_release(b);
             return sum;   
         }
     } else {
-        assert(!"unhandled type in ndt_sum");
+        assert(!"unhandled type in ndt_sum (outer)");
     }
 }
-
-// (link (add "hello" "world") (add "bye" "bye"))
-// (link $1 $2)
 
 NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj)
 {
@@ -332,6 +329,16 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj)
     }
 }
 
+NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
+{
+    if (arr == NULL) return NULL;
+    if (n > 1) {
+        return ndt_make_cons(arr[0], ndt_make_list(&arr[1], n-1));
+    } else {
+        return ndt_make_cons(arr[0], NULL);
+    }
+}
+
 #define NDT_EVAL(stmt) do { \
     NDT_OBJECT* obj = (stmt); \
     printf("> "); \
@@ -341,17 +348,18 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj)
     ndt_print(ret); \
     ndt_release(ret); \
 } while(0)
-    
-#define NDT_PRINT(stmt) do { \
-    NDT_OBJECT* obj = (stmt); \
-    printf("> "); \
-    ndt_print(obj); \
-    ndt_print(obj); \
-    ndt_release(obj); \
-} while(0)
 
+#define SYM(x) ndt_make_symbol(x)
+#define STR(x) ndt_make_string(x)
+#define INT(x) ndt_make_integer(x)
+#define DEC(x) ndt_make_decimal(x)
+#define LIST(...) ({ \
+    const NDT_OBJECT* arr[] = {__VA_ARGS__}; \
+    ndt_make_list(arr, sizeof(arr)/sizeof(NDT_OBJECT*)); \
+})
+   
 int main()
-{
+{    
     // (list (+ 1 2))
     NDT_EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(1), ndt_make_cons(ndt_make_integer(2), NULL))), NULL)));
     
@@ -369,4 +377,10 @@ int main()
     
     // "Hello World!"
     NDT_EVAL(ndt_make_string("Hello World!"));
+    
+    // (+ 3.14159 10)
+    NDT_EVAL(LIST(SYM("+"), DEC(3.14159), INT(10)));
+    
+    // (list (+ (+ 1 2) 3 4))
+    //NDT_EVAL(LIST(SYM("+"), LIST(SYM("+"), INT(1), INT(2)), INT(3), INT(4)));
 }
