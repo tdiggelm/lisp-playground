@@ -253,6 +253,24 @@ void ndt_print(const NDT_OBJECT* obj)
     printf("\n");
 }
 
+NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj);
+
+NDT_OBJECT* ndt_list(const NDT_OBJECT* args)
+{
+    if (ndt_is_nil(args)) {
+        return NULL;
+    } else if (ndt_is_cons(args)) {
+        if (ndt_is_symbol(ndt_car(args))) {
+            return ndt_eval(args);
+        } else {
+            return ndt_make_cons(ndt_list(ndt_car(args)),
+                ndt_list(ndt_cdr(args)));
+        }
+    } else {
+        return ndt_dup(args); 
+    }
+}
+
 NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
 {
     if (ndt_is_nil(args)) {
@@ -260,29 +278,35 @@ NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
     } else if (ndt_is_integer(args) || ndt_is_decimal(args)) {
         return ndt_dup(args);
     } else if (ndt_is_cons(args)) {
-        const NDT_OBJECT* a = ndt_car(args);
-        NDT_OBJECT* b = ndt_sum(ndt_cdr(args));
-        NDT_OBJECT* sum;
-        if (ndt_is_decimal(a) && ndt_is_decimal(b)) {
-            sum = ndt_make_decimal(ndt_decimal(a)+ndt_decimal(b));   
-        } else if (ndt_is_integer(a) && ndt_is_decimal(b)) {
-            sum = ndt_make_decimal(ndt_integer(a)+ndt_decimal(b));   
-        } else if (ndt_is_decimal(a) && ndt_is_integer(b)) {
-            sum = ndt_make_decimal(ndt_decimal(a)+ndt_integer(b));   
+        if (ndt_is_symbol(ndt_car(args))) {
+            return ndt_eval(args);
         } else {
-            sum = ndt_make_integer(ndt_integer(a)+ndt_integer(b));   
+            const NDT_OBJECT* a = ndt_car(args);
+            NDT_OBJECT* b = ndt_sum(ndt_cdr(args));
+            NDT_OBJECT* sum;
+            if (ndt_is_decimal(a) && ndt_is_decimal(b)) {
+                sum = ndt_make_decimal(ndt_decimal(a)+ndt_decimal(b));   
+            } else if (ndt_is_integer(a) && ndt_is_decimal(b)) {
+                sum = ndt_make_decimal(ndt_integer(a)+ndt_decimal(b));   
+            } else if (ndt_is_decimal(a) && ndt_is_integer(b)) {
+                sum = ndt_make_decimal(ndt_decimal(a)+ndt_integer(b));   
+            } else if (ndt_is_integer(a) && ndt_is_integer(b)) {
+                sum = ndt_make_integer(ndt_integer(a)+ndt_integer(b));   
+            } else {
+                assert(!"unhandled type in ndt_sum");
+            }
+            ndt_release(b);
+            return sum;   
         }
-        ndt_release(b);
-        return sum;
     } else {
-        assert(!"unhandled type in ndt_eval");
+        assert(!"unhandled type in ndt_sum");
     }
 }
 
 // (link (add "hello" "world") (add "bye" "bye"))
 // (link $1 $2)
 
-NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
+NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj)
 {
     if (ndt_is_decimal(obj) || ndt_is_integer(obj) || ndt_is_string(obj)) {
         return ndt_dup(obj);
@@ -291,6 +315,8 @@ NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
         assert(ndt_is_symbol(car)); // instead of assertion return error here
         if (strcmp(ndt_symbol(car), "+") == 0) { // use hashtable for lut
             return ndt_sum(ndt_cdr(obj));
+        } else if (strcmp(ndt_symbol(car), "list") == 0) {
+            return ndt_list(ndt_cdr(obj));
         } else {
             assert(!"unhandled symbol in ndt_eval");
         }
@@ -320,8 +346,11 @@ NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
 
 int main()
 {
+    // (list (+ 1 2))
+    NDT_EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(1), ndt_make_cons(ndt_make_integer(2), NULL))), NULL)));
+    
     // (list "Hello World!" 3.14159 100)
-    NDT_PRINT(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_string("Hello World!"), ndt_make_cons(ndt_make_decimal(3.14159), ndt_make_cons(ndt_make_integer(100), NULL)))));
+    NDT_EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_string("Hello World!"), ndt_make_cons(ndt_make_decimal(3.14159), ndt_make_cons(ndt_make_integer(100), NULL)))));
                 
     // (+ 5 10 20)
     NDT_EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
