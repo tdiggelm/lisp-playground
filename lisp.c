@@ -183,7 +183,6 @@ void ndt_release(NDT_OBJECT* obj)
 NDT_OBJECT* ndt_dup(const NDT_OBJECT* obj)
 {
     if (obj == NULL) {
-        printf("nil");
         return NULL;
     }
     
@@ -295,12 +294,49 @@ double ndt_sum_decimal(const NDT_OBJECT* args)
 }
 
 // infer type from first argument
-NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
+/*NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
 {
     if (ndt_is_cons(args) && ndt_is_decimal(ndt_car(args))) {
         return ndt_make_decimal(ndt_sum_decimal(args));
     } else {
         return ndt_make_integer(ndt_sum_integer(args));
+    }
+}*/
+
+// (1 . (2 . (3 . nil)))
+
+/*NDT_OBJECT* ndt_sum(NDT_OBJECT* args)
+{
+    NDT_OBJECT* ret;
+    if (ndt_is_cons(args)) {
+        if (ndt_is_nil(ndt_cdr(args))) {
+            ret = ndt_car(args);
+        } else {
+            NDT_OBJECT* a = ndt_car(args);
+            NDT_OBJECT* b = ndt_sum(ndt_cdr(args));
+            ret = ndt_make_integer(ndt_integer(a)+ndt_integer(b));
+            ndt_release(b);
+        }
+        ndt_release(args);
+    }
+    return ret;
+}*/
+
+
+NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
+{
+    if (ndt_is_nil(args)) {
+        return ndt_make_integer(0);
+    } else if (ndt_is_integer(args) || ndt_is_decimal(args)) {
+        return ndt_dup(args);
+    } else if (ndt_is_cons(args)) {
+        NDT_OBJECT* a = ndt_car(args);
+        NDT_OBJECT* b = ndt_sum(ndt_cdr(args));
+        NDT_OBJECT* ret = ndt_make_integer(ndt_integer(a)+ndt_integer(b));
+        ndt_release(b);
+        return ret;
+    } else {
+        assert(!"unhandled type in ndt_eval");
     }
 }
 
@@ -338,7 +374,7 @@ NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
 } while(0)
 
 int main()
-{
+{    
     size_t i;
     //for (i = 0; i < 10000; i++)
     {
@@ -353,7 +389,7 @@ int main()
         NDT_OBJECT* arg = ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)));
         //ndt_print(arg);
         //printf("\n");
-        NDT_OBJECT* ret = ndt_sum(arg);
+        NDT_OBJECT* ret = ndt_sum(ndt_dup(arg));
         sum += ndt_integer(ret);
         //ndt_print(ret);
         //printf("\n");
