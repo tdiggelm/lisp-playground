@@ -253,7 +253,7 @@ void ndt_print(const NDT_OBJECT* obj)
     printf("\n");
 }
 
-long long ndt_sum_integer(const NDT_OBJECT* args)
+/*long long ndt_sum_integer(const NDT_OBJECT* args)
 {
     assert(ndt_is_cons(args) 
         || ndt_is_nil(args) || ndt_is_integer(args) || ndt_is_decimal(args));
@@ -294,7 +294,7 @@ double ndt_sum_decimal(const NDT_OBJECT* args)
 }
 
 // infer type from first argument
-/*NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
+NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
 {
     if (ndt_is_cons(args) && ndt_is_decimal(ndt_car(args))) {
         return ndt_make_decimal(ndt_sum_decimal(args));
@@ -302,26 +302,6 @@ double ndt_sum_decimal(const NDT_OBJECT* args)
         return ndt_make_integer(ndt_sum_integer(args));
     }
 }*/
-
-// (1 . (2 . (3 . nil)))
-
-/*NDT_OBJECT* ndt_sum(NDT_OBJECT* args)
-{
-    NDT_OBJECT* ret;
-    if (ndt_is_cons(args)) {
-        if (ndt_is_nil(ndt_cdr(args))) {
-            ret = ndt_car(args);
-        } else {
-            NDT_OBJECT* a = ndt_car(args);
-            NDT_OBJECT* b = ndt_sum(ndt_cdr(args));
-            ret = ndt_make_integer(ndt_integer(a)+ndt_integer(b));
-            ndt_release(b);
-        }
-        ndt_release(args);
-    }
-    return ret;
-}*/
-
 
 NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
 {
@@ -332,9 +312,18 @@ NDT_OBJECT* ndt_sum(const NDT_OBJECT* args)
     } else if (ndt_is_cons(args)) {
         NDT_OBJECT* a = ndt_car(args);
         NDT_OBJECT* b = ndt_sum(ndt_cdr(args));
-        NDT_OBJECT* ret = ndt_make_integer(ndt_integer(a)+ndt_integer(b));
+        NDT_OBJECT* sum;
+        if (ndt_is_decimal(a) && ndt_is_decimal(b)) {
+            sum = ndt_make_decimal(ndt_decimal(a)+ndt_decimal(b));   
+        } else if (ndt_is_integer(a) && ndt_is_decimal(b)) {
+            sum = ndt_make_decimal(ndt_integer(a)+ndt_decimal(b));   
+        } else if (ndt_is_decimal(a) && ndt_is_integer(b)) {
+            sum = ndt_make_decimal(ndt_decimal(a)+ndt_integer(b));   
+        } else {
+            sum = ndt_make_integer(ndt_integer(a)+ndt_integer(b));   
+        }
         ndt_release(b);
-        return ret;
+        return sum;
     } else {
         assert(!"unhandled type in ndt_eval");
     }
@@ -352,8 +341,6 @@ NDT_OBJECT* ndt_eval(NDT_OBJECT* obj)
         assert(ndt_is_symbol(car)); // instead of assertion return error here
         if (strcmp(ndt_symbol(car), "+") == 0) { // use hashtable for lut
             return ndt_sum(ndt_cdr(obj));
-        } else if (strcmp(ndt_symbol(car), ".+") == 0) {
-            return ndt_make_decimal(ndt_sum_decimal(ndt_cdr(obj)));
         } else {
             assert(!"unhandled symbol in ndt_eval");
         }
@@ -389,7 +376,7 @@ int main()
         NDT_OBJECT* arg = ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)));
         //ndt_print(arg);
         //printf("\n");
-        NDT_OBJECT* ret = ndt_sum(ndt_dup(arg));
+        NDT_OBJECT* ret = ndt_sum(arg);
         sum += ndt_integer(ret);
         //ndt_print(ret);
         //printf("\n");
@@ -406,8 +393,6 @@ int main()
     NDT_EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
     
     NDT_EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_decimal(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
-    
-    NDT_EVAL(ndt_make_cons(ndt_make_symbol(".+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
         
     NDT_EVAL(ndt_make_integer(123));
     
