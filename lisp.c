@@ -9,6 +9,12 @@
 - error handling: what happens when wrong type is in argument?
 - maybe implement NDT_NUMBER type containing union of int64_t + double that can be passes by-value from sum function
 - implement simple parser to evaluate sexpr
+- terminate list with empty list ():=nil instead of NULL
+- implement map, apply, union, difference, etc.
+- implement sexp parser
+- implement mexp parser
+- implement lambda (+ shortcut: (\ [x y] x*y)
+- implement let (with lambda)
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING} NDT_TYPE;
