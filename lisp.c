@@ -323,7 +323,6 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj)
         } else {
             assert(!"unhandled symbol in ndt_eval");
         }
-        
     } else {
         assert(!"unhandled type in ndt_eval");
     }
@@ -339,7 +338,7 @@ NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
     }
 }
 
-#define NDT_EVAL(stmt) do { \
+#define EVAL(stmt) do { \
     NDT_OBJECT* obj = (stmt); \
     printf("> "); \
     ndt_print(obj); \
@@ -361,26 +360,32 @@ NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
 int main()
 {    
     // (list (+ 1 2))
-    NDT_EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(1), ndt_make_cons(ndt_make_integer(2), NULL))), NULL)));
+    EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(1), ndt_make_cons(ndt_make_integer(2), NULL))), NULL)));
     
     // (list "Hello World!" 3.14159 100)
-    NDT_EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_string("Hello World!"), ndt_make_cons(ndt_make_decimal(3.14159), ndt_make_cons(ndt_make_integer(100), NULL)))));
+    EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_string("Hello World!"), ndt_make_cons(ndt_make_decimal(3.14159), ndt_make_cons(ndt_make_integer(100), NULL)))));
                 
     // (+ 5 10 20)
-    NDT_EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
+    EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
     
     // (+ 5.0 10 20)
-    NDT_EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_decimal(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
+    EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_decimal(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
+    
+    // foo => implement quote
+    // EVAL(ndt_make_symbol("foo"));
     
     // 123
-    NDT_EVAL(ndt_make_integer(123));
+    EVAL(ndt_make_integer(123));
+    
+    // 3.14159
+    EVAL(ndt_make_decimal(3.14159));
     
     // "Hello World!"
-    NDT_EVAL(ndt_make_string("Hello World!"));
+    EVAL(ndt_make_string("Hello World!"));
     
     // (+ 3.14159 10)
-    NDT_EVAL(LIST(SYM("+"), DEC(3.14159), INT(10)));
+    EVAL(LIST(SYM("+"), DEC(3.14159), INT(10)));
     
     // (list (+ (+ 1 2) 3 4))
-    //NDT_EVAL(LIST(SYM("+"), LIST(SYM("+"), INT(1), INT(2)), INT(3), INT(4)));
+    //EVAL(LIST(SYM("+"), LIST(SYM("+"), INT(1), INT(2)), INT(3), INT(4)));
 }
