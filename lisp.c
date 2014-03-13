@@ -352,6 +352,7 @@ NDT_OBJECT* ndt_make_sexp(const NDT_OBJECT* arr[], size_t n)
     ndt_release(ret); \
 } while(0)
 
+#define APPEND(x, y) ndt_append(x, y)
 #define SYM(x) ndt_make_symbol(x)
 #define STR(x) ndt_make_string(x)
 #define INT(x) ndt_make_integer(x)
@@ -392,7 +393,7 @@ int main()
     
     EVAL(SEXPR(SYM("+"), DEC(3.14159), INT(10)));
     
-    EVAL(ndt_append(SEXPR(SYM("list"), DEC(3.14159), INT(10)), 
+    EVAL(APPEND(SEXPR(SYM("list"), DEC(3.14159), INT(10)), 
         SEXPR(DEC(23), INT(24))));
 
     // (list (+ (+ 1 2) 3 4))
