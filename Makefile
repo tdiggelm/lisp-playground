@@ -1,9 +1,13 @@
-all: lisp
-	gcc -o lisp lisp.c
+FILES = lisp.c
+CC = gcc
+LDFLAGS = -std=gnu99
+
+lisp: $(FILES)
+	$(CC) $(LDFLAGS) -o $@ $^
 	
-valgrind: all
-	! valgrind --leak-check=full ./lisp
+valgrind: lisp
+	valgrind --leak-check=full ./lisp
 	
 .PHONY: clean
 clean:
-	rm lisp
+	rm -f lisp *.o
