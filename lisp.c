@@ -228,31 +228,39 @@ NDT_OBJECT* ndt_append(NDT_OBJECT* sexp1, NDT_OBJECT* sexp2)
     return sexp1;
 }
 
-int __ndt_print(const NDT_OBJECT* obj, int print_bracket)
+void __ndt_print(const NDT_OBJECT* obj, int print_bracket)
 {
     if (obj == NULL) {
         printf("nil");
-        return 0;
+        return;
     }
     
     switch(obj->type) {
         case NDT_TYPE_INTEGER: {
             printf("%lld", ndt_integer(obj));
-            return 1;
+            break;
         }
         case NDT_TYPE_DECIMAL: {
             printf("%lf", ndt_decimal(obj));
-            return 1;
+            break;
         }
         case NDT_TYPE_STRING: {
             printf("\"%s\"", ndt_string(obj));
-            return 1;
+            break;
         }
         case NDT_TYPE_SYMBOL: {
             printf("%s", ndt_symbol(obj));
-            return 1;
+            break;
         }
         case NDT_TYPE_PAIR: {
+#ifdef PRINT_CONS
+            printf("(");
+            __ndt_print(ndt_car(obj), 0);
+            printf(" . ");
+            __ndt_print(ndt_cdr(obj), 0);
+            printf(")");
+            break;
+#else
             if (print_bracket) printf("(");
             __ndt_print(ndt_car(obj), 1);
             if (!ndt_is_nil(ndt_cdr(obj))) {
@@ -265,6 +273,7 @@ int __ndt_print(const NDT_OBJECT* obj, int print_bracket)
             }
             if (print_bracket) printf(")");
             break;
+#endif
         }
         default: {
             assert(!"unkown type in __ndt_print\n");
@@ -412,7 +421,32 @@ int main()
     EVAL(APPEND(LIST(SYM("list"), DEC(3.14159), INT(10)), 
         LIST(DEC(23), INT(24))));
     
-    PRINT(LIST(INT(1), INT(2), LIST(INT(3), CONS(INT(4), CONS(INT(4),INT(77)))), INT(5)));
+    PRINT(
+        LIST(
+            INT(1), INT(2), 
+            LIST(
+                INT(3), INT(4)
+            ), 
+            INT(5)
+        )
+    );
+            
+    PRINT(CONS(INT(4), CONS(INT(5), INT(6))));
+                
+    PRINT(
+        LIST(
+            INT(1), INT(2), 
+            CONS(
+                INT(3), CONS(
+                    INT(4), CONS(
+                        INT(5),
+                        INT(6)
+                    )
+                )
+            ), 
+            INT(5)
+        )
+    );
     
     PRINT(LIST(INT(1), INT(2), LIST(INT(3), INT(4)), INT(5)));
 
