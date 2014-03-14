@@ -447,6 +447,24 @@ int main()
             INT(5)
         )
     );
+            
+    PRINT(
+        LIST(
+            STR("Hello"), STR("World"), 
+            CONS(
+                SYM("foo"), CONS(
+                    DEC(3.14159), CONS(
+                        INT(5),
+                        INT(6)
+                    )
+                )
+            ), 
+            LIST(
+                INT(77),
+                DEC(87.9)
+            )
+        )
+    );
     
     PRINT(LIST(INT(1), INT(2), LIST(INT(3), INT(4)), INT(5)));
 
