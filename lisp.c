@@ -15,7 +15,6 @@
 - implement mexp parser
 - implement lambda (+ shortcut: (\ [x y] x*y)
 - implement let (with lambda)
-- fix const madness
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING} NDT_TYPE;
@@ -216,10 +215,11 @@ NDT_OBJECT* ndt_dup(const NDT_OBJECT* obj)
     }
 }
 
-const NDT_OBJECT* ndt_append(const NDT_OBJECT* sexp1, const NDT_OBJECT* sexp2)
+NDT_OBJECT* ndt_append(NDT_OBJECT* sexp1, NDT_OBJECT* sexp2)
 {
-    if (ndt_is_nil(sexp1)) return sexp2;
-    if (ndt_is_nil(sexp2)) return sexp1;
+    if (ndt_is_nil(sexp1)) return sexp1;
+    if (ndt_is_nil(sexp2)) return sexp2;
+    
     const NDT_OBJECT* obj = sexp1;
     while(!ndt_is_nil(ndt_cdr(obj))) {
         obj = ndt_cdr(obj);
