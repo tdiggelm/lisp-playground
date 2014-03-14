@@ -11,3 +11,6 @@ valgrind: lisp
 .PHONY: clean
 clean:
 	rm -f lisp *.o
+	
+.PHONY: rebuild
+rebuild: clean lisp
