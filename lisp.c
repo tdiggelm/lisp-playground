@@ -228,36 +228,42 @@ NDT_OBJECT* ndt_append(NDT_OBJECT* sexp1, NDT_OBJECT* sexp2)
     return sexp1;
 }
 
-void __ndt_print(const NDT_OBJECT* obj)
+int __ndt_print(const NDT_OBJECT* obj, int print_bracket)
 {
     if (obj == NULL) {
         printf("nil");
-        return;
+        return 0;
     }
     
     switch(obj->type) {
         case NDT_TYPE_INTEGER: {
             printf("%lld", ndt_integer(obj));
-            break;
+            return 1;
         }
         case NDT_TYPE_DECIMAL: {
             printf("%lf", ndt_decimal(obj));
-            break;
+            return 1;
         }
         case NDT_TYPE_STRING: {
             printf("\"%s\"", ndt_string(obj));
-            break;
+            return 1;
         }
         case NDT_TYPE_SYMBOL: {
             printf("%s", ndt_symbol(obj));
-            break;
+            return 1;
         }
         case NDT_TYPE_PAIR: {
-            printf("(");
-            __ndt_print(ndt_car(obj));
-            printf(" . ");
-            __ndt_print(ndt_cdr(obj));
-            printf(")");
+            if (print_bracket) printf("(");
+            __ndt_print(ndt_car(obj), 1);
+            if (!ndt_is_nil(ndt_cdr(obj))) {
+                if (ndt_is_cons(ndt_cdr(obj))) {
+                    printf(" ");
+                } else {
+                    printf(" . ");
+                }
+                __ndt_print(ndt_cdr(obj), 0);   
+            }
+            if (print_bracket) printf(")");
             break;
         }
         default: {
@@ -268,7 +274,7 @@ void __ndt_print(const NDT_OBJECT* obj)
 
 void ndt_print(const NDT_OBJECT* obj)
 {
-    __ndt_print(obj);
+    __ndt_print(obj, 1);
     printf("\n");
 }
 
@@ -353,13 +359,21 @@ NDT_OBJECT* ndt_make_sexp(const NDT_OBJECT* arr[], size_t n)
     ndt_print(ret); \
     ndt_release(ret); \
 } while(0)
+    
+#define PRINT(stmt) do { \
+    NDT_OBJECT* obj = (stmt); \
+    printf("> "); \
+    ndt_print(obj); \
+    ndt_release(obj); \
+} while(0)
 
 #define APPEND(x, y) ndt_append(x, y)
+#define CONS(x,y) ndt_make_cons(x, y)
 #define SYM(x) ndt_make_symbol(x)
 #define STR(x) ndt_make_string(x)
 #define INT(x) ndt_make_integer(x)
 #define DEC(x) ndt_make_decimal(x)
-#define SEXPR(...) ({ \
+#define LIST(...) ({ \
     const NDT_OBJECT* arr[] = {__VA_ARGS__}; \
     ndt_make_sexp(arr, sizeof(arr)/sizeof(NDT_OBJECT*)); \
 })
@@ -391,12 +405,16 @@ int main()
     EVAL(ndt_make_string("Hello World!"));
     
     // (+ 3.14159 10)
-    EVAL(SEXPR(SYM("+"), DEC(3.14159), INT(10)));
+    EVAL(LIST(SYM("+"), DEC(3.14159), INT(10)));
     
-    EVAL(SEXPR(SYM("+"), DEC(3.14159), INT(10)));
+    EVAL(LIST(SYM("+"), DEC(3.14159), INT(10)));
     
-    EVAL(APPEND(SEXPR(SYM("list"), DEC(3.14159), INT(10)), 
-        SEXPR(DEC(23), INT(24))));
+    EVAL(APPEND(LIST(SYM("list"), DEC(3.14159), INT(10)), 
+        LIST(DEC(23), INT(24))));
+    
+    PRINT(LIST(INT(1), INT(2), LIST(INT(3), CONS(INT(4), CONS(INT(4),INT(77)))), INT(5)));
+    
+    PRINT(LIST(INT(1), INT(2), LIST(INT(3), INT(4)), INT(5)));
 
     // (list (+ (+ 1 2) 3 4))
     //EVAL(LIST(SYM("+"), LIST(SYM("+"), INT(1), INT(2)), INT(3), INT(4)));
