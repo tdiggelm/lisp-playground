@@ -17,7 +17,7 @@
 - implement let (with lambda)
 */
 
-typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING} NDT_TYPE;
+typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
 
 typedef struct object {
     NDT_TYPE type;
@@ -42,6 +42,12 @@ typedef struct ndt_symbol {
     NDT_TYPE type;
     const char* ndt_symbol;
 } NDT_SYMBOL;
+
+typedef struct ndt_func {
+    NDT_TYPE type;
+    const char* name;
+    NDT_OBJECT* (*func)(const NDT_OBJECT*);
+} NDT_FUNC;
 
 typedef struct pair {
     NDT_TYPE type;
@@ -114,6 +120,12 @@ const char* ndt_string(const NDT_OBJECT* obj)
     return ((NDT_STRING*)obj)->ndt_string;
 }
 
+NDT_OBJECT* ndt_call(const NDT_OBJECT* obj, const NDT_OBJECT* args)
+{
+    assert(obj->type == NDT_TYPE_FUNC);
+    return ((NDT_FUNC*)obj)->func(args);
+}
+
 const NDT_OBJECT* ndt_car(const NDT_OBJECT* obj)
 {
     assert(obj->type == NDT_TYPE_PAIR);
@@ -151,6 +163,11 @@ int ndt_is_string(const NDT_OBJECT* obj)
 int ndt_is_symbol(const NDT_OBJECT* obj)
 {
     return (obj != NULL && obj->type == NDT_TYPE_SYMBOL);
+}
+
+int ndt_is_func(const NDT_OBJECT* obj)
+{
+    return (obj != NULL && obj->type == NDT_TYPE_FUNC);
 }
 
 int ndt_is_cons(const NDT_OBJECT* obj)
@@ -204,7 +221,10 @@ NDT_OBJECT* ndt_dup(const NDT_OBJECT* obj)
         }
         case NDT_TYPE_SYMBOL: {
             return ndt_make_symbol(ndt_symbol(obj));
-            break;
+        }
+        case NDT_TYPE_FUNC: {
+            NDT_OBJECT* dup = malloc(sizeof(NDT_FUNC));
+            return memcpy(dup, obj, sizeof(NDT_FUNC));
         }
         case NDT_TYPE_PAIR: {
             return ndt_make_cons(ndt_dup(ndt_car(obj)), ndt_dup(ndt_cdr(obj)));
@@ -252,6 +272,10 @@ void __ndt_print(const NDT_OBJECT* obj, int print_bracket)
             printf("%s", ndt_symbol(obj));
             break;
         }
+        case NDT_TYPE_FUNC: {
+            printf("<FUNC:%s>", ((const NDT_FUNC*)obj)->name);
+            break;
+        }
         case NDT_TYPE_PAIR: {
 #ifdef PRINT_CONS
             printf("(");
@@ -287,7 +311,22 @@ void ndt_print(const NDT_OBJECT* obj)
     printf("\n");
 }
 
-NDT_OBJECT* ndt_eval(const NDT_OBJECT* obj);
+NDT_OBJECT* ndt_apply(const NDT_OBJECT* sexp)
+{
+    return ndt_call(ndt_car(sexp), ndt_car(ndt_cdr(sexp)));
+}
+
+NDT_OBJECT* ndt_map(const NDT_OBJECT* sexp)
+{
+    const NDT_OBJECT* curr = ndt_cdr(sexp);
+    NDT_OBJECT* result = NULL;
+    while(curr != NULL && ndt_is_cons(curr)) {      
+        result = ndt_append(result, ndt_make_cons(
+            ndt_call(ndt_car(sexp), ndt_car(curr)), NULL));
+        curr = ndt_cdr(curr);
+    }
+    return result;
+}
 
 NDT_OBJECT* ndt_list(const NDT_OBJECT* sexp)
 {
@@ -358,10 +397,40 @@ NDT_OBJECT* ndt_product(const NDT_OBJECT* sexp)
     }
 }
 
+// map: (map func args...) ; func := lambda | symbol 
+// - when arguments are evaluated, the function is returned as NDT_FUNC that is callable with each of the arguments in the function body
+// - the above need to have the symbol lookup-up implemented (2nd param to ndt_eval: const NDT_OBJECT* env) 
+
+const static NDT_FUNC sum_fn = {NDT_TYPE_FUNC, "+", &ndt_sum};
+const static NDT_FUNC prod_fn = {NDT_TYPE_FUNC, "*", &ndt_product};
+const static NDT_FUNC list_fn = {NDT_TYPE_FUNC, "list", &ndt_list};
+const static NDT_FUNC apply_fn = {NDT_TYPE_FUNC, "apply", &ndt_apply};
+const static NDT_FUNC map_fn = {NDT_TYPE_FUNC, "map", &ndt_map};
+
+const NDT_OBJECT* ndt_lookup(const char* symbol)
+{
+    if (strcmp(symbol, "+") == 0) { // use hashtable for lut
+        return (const NDT_OBJECT*)&sum_fn;
+    } else if (strcmp(symbol, "*") == 0) { // use hashtable for lut
+        return (const NDT_OBJECT*)&prod_fn;
+    } else if (strcmp(symbol, "list") == 0) {
+        return (const NDT_OBJECT*)&list_fn;
+    } else if (strcmp(symbol, "apply") == 0) {
+        return (const NDT_OBJECT*)&apply_fn;
+    } else if (strcmp(symbol, "map") == 0) {
+        return (const NDT_OBJECT*)&map_fn;
+    } else {
+        assert(!"ndt_lookup: symbol not found");
+    }
+}
+
 NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
 {
     if (ndt_is_decimal(sexp) || ndt_is_integer(sexp) || ndt_is_string(sexp)) {
         return ndt_dup(sexp);
+    } else if (ndt_is_symbol(sexp)) {
+        return ndt_dup(ndt_lookup(ndt_symbol(sexp)));
+        // TODO: decide whether to throw here or return nil when lookup failed
     } else if (ndt_is_cons(sexp) && ndt_is_symbol(ndt_car(sexp))) {
         
         // special procedure quote
@@ -369,12 +438,14 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
             return ndt_dup(ndt_car(ndt_cdr(sexp)));
         }
         
+        const NDT_OBJECT* symbol = ndt_lookup(ndt_symbol(ndt_car(sexp)));
+        // TODO: check if is func or lambda, throw otherwise
+        
         // evaluate arguments
         const NDT_OBJECT* curr = ndt_cdr(sexp);
         NDT_OBJECT* args = NULL;
         int i = 0;
-        while(curr != NULL) {
-            // TODO: check if type(curr) != cons => throw exception            
+        while(curr != NULL && ndt_is_cons(curr)) {      
             args = ndt_append(args, ndt_make_cons(
                 ndt_eval(ndt_car(curr)), NULL));
             curr = ndt_cdr(curr);
@@ -382,21 +453,16 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
         
         // evaluate function
         NDT_OBJECT* result;
-        const NDT_OBJECT* car = ndt_car(sexp);
-        if (strcmp(ndt_symbol(car), "+") == 0) { // use hashtable for lut
-            result = ndt_sum(args);
-        } else if (strcmp(ndt_symbol(car), "*") == 0) { // use hashtable for lut
-            result = ndt_product(args);
-        } else if (strcmp(ndt_symbol(car), "list") == 0) {
-            result = ndt_list(args);
-        } else {
-            assert(!"unhandled symbol in ndt_eval");
+        if (ndt_is_func(symbol)) {
+            result = ndt_call(symbol, args); // also handle lambda eval in ndt_call()
         }
         
         ndt_release(args);
         return result;
     } else {
-        assert(!"unhandled type in ndt_eval");
+        //printf("@@@ERROR: ");
+        //ndt_print(sexp);
+        assert(!"ndt_eval: unhandled type");
     }
 }
 
@@ -440,65 +506,7 @@ NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
    
 int main()
 {    
-    // (list (+ 1 2))
-    EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(1), ndt_make_cons(ndt_make_integer(2), NULL))), NULL)));
-    
-    // (list "Hello World!" 3.14159 100)
-    EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_string("Hello World!"), ndt_make_cons(ndt_make_decimal(3.14159), ndt_make_cons(ndt_make_integer(100), NULL)))));
-                
-    // (+ 5 10 20)
-    EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
-    
-    // (+ 5.0 10 20)
-    EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_decimal(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
-    
-    // foo => implement quote
-    // EVAL(ndt_make_symbol("foo"));
-    
-    // 123
-    EVAL(ndt_make_integer(123));
-    
-    // 3.14159
-    EVAL(ndt_make_decimal(3.14159));
-    
-    // "Hello World!"
-    EVAL(ndt_make_string("Hello World!"));
-    
-    // (+ 3.14159 10)
-    EVAL(LIST(SYM("+"), DEC(3.14159), INT(10)));
-    
-    EVAL(LIST(SYM("+"), DEC(3.14159), INT(10)));
-    
-    EVAL(APPEND(LIST(SYM("list"), DEC(3.14159), INT(10)), 
-        LIST(DEC(23), INT(24))));
-    
-    PRINT(
-        LIST(
-            INT(1), INT(2), 
-            LIST(
-                INT(3), INT(4)
-            ), 
-            INT(5)
-        )
-    );
-            
-    PRINT(CONS(INT(4), CONS(INT(5), INT(6))));
-                
-    PRINT(
-        LIST(
-            INT(1), INT(2), 
-            CONS(
-                INT(3), CONS(
-                    INT(4), CONS(
-                        INT(5),
-                        INT(6)
-                    )
-                )
-            ), 
-            INT(5)
-        )
-    );
-            
+    // print complex structure        
     PRINT(
         LIST(
             STR("Hello"), STR("World"), 
@@ -517,7 +525,33 @@ int main()
         )
     );
     
-    PRINT(LIST(INT(1), INT(2), LIST(INT(3), INT(4)), INT(5)));
+    // (list (+ 1 2))
+    EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(1), ndt_make_cons(ndt_make_integer(2), NULL))), NULL)));
+    
+    // (list "Hello World!" 3.14159 100)
+    EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_string("Hello World!"), ndt_make_cons(ndt_make_decimal(3.14159), ndt_make_cons(ndt_make_integer(100), NULL)))));
+                
+    // (+ 5 10 20)
+    EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
+    
+    // (+ 5.0 10 20)
+    EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_decimal(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
+    
+    // 123
+    EVAL(ndt_make_integer(123));
+    
+    // 3.14159
+    EVAL(ndt_make_decimal(3.14159));
+    
+    // "Hello World!"
+    EVAL(ndt_make_string("Hello World!"));
+    
+    // (+ 3.14159 10)
+    EVAL(LIST(SYM("+"), DEC(3.14159), INT(10)));
+    
+    // (list 3.141590 10 23.000000 24)
+    EVAL(APPEND(LIST(SYM("list"), DEC(3.14159), INT(10)), 
+        LIST(DEC(23), INT(24))));
 
     // (list (+ (+ 1 2) 3 4))
     EVAL(LIST(SYM("+"), LIST(SYM("+"), INT(1), INT(2)), INT(3), INT(4)));
@@ -525,6 +559,20 @@ int main()
     // (+ (* 2 3) (* 4 (+ 5 10)) 20)
     EVAL(LIST(SYM("+"), LIST(SYM("*"), INT(2), INT(3)), LIST(SYM("*"), INT(4), LIST(SYM("+"), INT(5), INT(10))), INT(20)));
     
+    // (quote hello 22)
     EVAL(LIST(SYM("quote"), SYM("hello"), INT(22)));
+   
+    // (quote (hello "test" 123))
     EVAL(LIST(SYM("quote"), LIST(SYM("hello"), STR("test"), INT(123))));
+    
+    // (apply + (quote (1 2.000000 123)))
+    EVAL(LIST(SYM("apply"), SYM("+"), LIST(SYM("quote"), LIST(INT(1), DEC(2), INT(123)))));
+    
+    // (map * (map + (list 1 2 3) (list 7.000000 8.000000 9.000000)))
+    EVAL(LIST(SYM("map"), SYM("*"),
+        LIST(SYM("map"), SYM("+"), 
+            LIST(SYM("list"), INT(1), INT(2), INT(3)),
+            LIST(SYM("list"), DEC(7), DEC(8), DEC(9))
+        )
+    ));
 }
