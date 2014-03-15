@@ -397,10 +397,6 @@ NDT_OBJECT* ndt_product(const NDT_OBJECT* sexp)
     }
 }
 
-// map: (map func args...) ; func := lambda | symbol 
-// - when arguments are evaluated, the function is returned as NDT_FUNC that is callable with each of the arguments in the function body
-// - the above need to have the symbol lookup-up implemented (2nd param to ndt_eval: const NDT_OBJECT* env) 
-
 const static NDT_FUNC sum_fn = {NDT_TYPE_FUNC, "+", &ndt_sum};
 const static NDT_FUNC prod_fn = {NDT_TYPE_FUNC, "*", &ndt_product};
 const static NDT_FUNC list_fn = {NDT_TYPE_FUNC, "list", &ndt_list};
@@ -421,6 +417,7 @@ const NDT_OBJECT* ndt_lookup(const char* symbol)
         return (const NDT_OBJECT*)&map_fn;
     } else {
         assert(!"ndt_lookup: symbol not found");
+        // TODO: return error here (or nil?)
     }
 }
 
@@ -439,7 +436,7 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
         }
         
         const NDT_OBJECT* symbol = ndt_lookup(ndt_symbol(ndt_car(sexp)));
-        // TODO: check if is func or lambda, throw otherwise
+        // TODO: check if is func or lambda, throw otherwise => better: let ndt_call decide what to do when symbol != callable => e.g. return error there
         
         // evaluate arguments
         const NDT_OBJECT* curr = ndt_cdr(sexp);
@@ -460,9 +457,8 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
         ndt_release(args);
         return result;
     } else {
-        //printf("@@@ERROR: ");
-        //ndt_print(sexp);
         assert(!"ndt_eval: unhandled type");
+        // TODO: maybe simply return unevaluated here
     }
 }
 
