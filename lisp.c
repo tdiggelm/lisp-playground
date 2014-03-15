@@ -363,6 +363,11 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
     if (ndt_is_decimal(sexp) || ndt_is_integer(sexp) || ndt_is_string(sexp)) {
         return ndt_dup(sexp);
     } else if (ndt_is_cons(sexp) && ndt_is_symbol(ndt_car(sexp))) {
+        // special procedure quote
+        if (strcmp(ndt_symbol(ndt_car(sexp)), "quote") == 0) {
+            return ndt_dup(ndt_car(ndt_cdr(sexp)));
+        }
+        
         const NDT_OBJECT* curr = ndt_cdr(sexp);
         NDT_OBJECT* args = NULL;
         
@@ -528,4 +533,7 @@ int main()
     
     // (+ (* 2 3) (* 4 (+ 5 10)) 20)
     EVAL(LIST(SYM("+"), LIST(SYM("*"), INT(2), INT(3)), LIST(SYM("*"), INT(4), LIST(SYM("+"), INT(5), INT(10))), INT(20)));
+    
+    EVAL(LIST(SYM("quote"), SYM("hello"), INT(22)));
+    EVAL(LIST(SYM("quote"), LIST(SYM("hello"), STR("test"), INT(123))));
 }
