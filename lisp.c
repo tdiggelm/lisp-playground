@@ -7,14 +7,21 @@
 - create ndt_nil (pair(NULL, NULL)), ndt_true (atom("#t"))
 - create environment (use ut_hash for symbol lut)
 - error handling: what happens when wrong type is in argument?
-- maybe implement NDT_NUMBER type containing union of int64_t + double that can be passes by-value from sum function
 - implement simple parser to evaluate sexpr
 - terminate list with empty list ():=nil instead of NULL
-- implement map, apply, union, difference, etc.
+- implement union, difference, etc.
 - implement sexp parser
 - implement mexp parser
 - implement lambda (+ shortcut: (\ [x y] x*y)
 - implement let (with lambda)
+- implement max recursion depth
+- implement cons, car, cdr as commands
+- implement + as (foldl + 0 (1 2 3))
+- eval sexpr: compare:
+    * status quo
+    * cons arguments into temp (reversed) args list, then reverse (loop, cons again)
+    * destructive eval: don't duplicate but remove uneeded stuff so that eval returns the same structure as stmt with replaced content (or something new)
+- eval implementation of sum / prod etc. with foldl (-> foldl can be implemented with a loop rather then with recursion!!, then implement binary sum, prod, etc => ndt_sum(NDT_OBJECT* a, NDT_OBJECT* b)), see: http://codereview.stackexchange.com/questions/1803/scheme-sicp-ex-2-39-reverse-in-terms-of-fold-right-and-fold-left
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
