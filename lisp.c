@@ -363,33 +363,24 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
     if (ndt_is_decimal(sexp) || ndt_is_integer(sexp) || ndt_is_string(sexp)) {
         return ndt_dup(sexp);
     } else if (ndt_is_cons(sexp) && ndt_is_symbol(ndt_car(sexp))) {
+        
         // special procedure quote
         if (strcmp(ndt_symbol(ndt_car(sexp)), "quote") == 0) {
             return ndt_dup(ndt_car(ndt_cdr(sexp)));
         }
         
+        // evaluate arguments
         const NDT_OBJECT* curr = ndt_cdr(sexp);
         NDT_OBJECT* args = NULL;
-        
-        //printf("*** OP ");
-        //ndt_print(ndt_car(sexp));
-        
         int i = 0;
         while(curr != NULL) {
-            //printf("=== ARG %d: ", ++i);
-            //ndt_print(ndt_car(curr));
-            
-            // TODO: check if type(curr) != cons => throw exception
-            
+            // TODO: check if type(curr) != cons => throw exception            
             args = ndt_append(args, ndt_make_cons(
                 ndt_eval(ndt_car(curr)), NULL));
-            
             curr = ndt_cdr(curr);
         }
         
-        //printf("### ARGS: ");
-        //ndt_print(args);
-        
+        // evaluate function
         NDT_OBJECT* result;
         const NDT_OBJECT* car = ndt_car(sexp);
         if (strcmp(ndt_symbol(car), "+") == 0) { // use hashtable for lut
