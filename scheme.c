@@ -30,7 +30,8 @@ http://michaux.ca/articles/scheme-from-scratch-bootstrap-v0_1-integers
 - empty list / nil => singleton
 - implement special forms / builtin symbols as singleton => QUOTE, #t, #f, etc. then use e.g. SEXP(QUOTE, STR("hello"), NIL) => remove LIST macro and ass SEXP macro, QUOTE macro returns singleton quote symbol
 - add a VM struct that holds the environment and any other open pointers (e.g. nathan dataspace handle)
-- see tailcall: https://github.com/petermichaux/bootstrap-scheme/blob/v0.10/scheme.c#L715 for tail call optimization, https://www.gnu.org/software/guile/manual/html_node/Tail-Calls.html
+- TODO: see tailcall - trick: when evaluated, set in-place then goto begin of function and re-evaluate (no need for new stack frame => if, lambda, when, let, etc.): https://github.com/petermichaux/bootstrap-scheme/blob/v0.10/scheme.c#L715 for tail call optimization, https://www.gnu.org/software/guile/manual/html_node/Tail-Calls.html
+- see here for special forms: http://sicp.ai.mit.edu/Fall-2003/manuals/scheme-7.5.5/doc/scheme_3.html
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;

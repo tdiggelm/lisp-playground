@@ -1,16 +1,16 @@
-FILES = lisp.c
+FILES = scheme.c
 CC = gcc
 LDFLAGS = -std=gnu99
 
-lisp: $(FILES)
+scheme: $(FILES)
 	$(CC) $(LDFLAGS) -o $@ $^
 	
-valgrind: lisp
-	valgrind --leak-check=full ./lisp
+valgrind: scheme
+	valgrind --leak-check=full ./scheme
 	
 .PHONY: clean
 clean:
-	rm -f lisp *.o
+	rm -f scheme *.o
 	
 .PHONY: rebuild
-rebuild: clean lisp
+rebuild: clean scheme
