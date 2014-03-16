@@ -32,6 +32,11 @@ http://michaux.ca/articles/scheme-from-scratch-bootstrap-v0_1-integers
 - add a VM struct that holds the environment and any other open pointers (e.g. nathan dataspace handle)
 - TODO: see tailcall - trick: when evaluated, set in-place then goto begin of function and re-evaluate (no need for new stack frame => if, lambda, when, let, etc.): https://github.com/petermichaux/bootstrap-scheme/blob/v0.10/scheme.c#L715 for tail call optimization, https://www.gnu.org/software/guile/manual/html_node/Tail-Calls.html
 - see here for special forms: http://sicp.ai.mit.edu/Fall-2003/manuals/scheme-7.5.5/doc/scheme_3.html
+- when tail recursion correctly implemented map could be implemented in scheme: (define (map proc items)
+    (if (null? items)
+        '()
+        (cons (proc (car items))
+              (map proc (cdr items)))))
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
@@ -459,6 +464,7 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
         // TODO: check if is func or lambda, throw otherwise => better: let ndt_call decide what to do when symbol != callable => e.g. return error there
         
         // evaluate arguments
+        // TODO: compare with https://github.com/petermichaux/bootstrap-scheme/blob/v0.13/scheme.c#L1038
         const NDT_OBJECT* curr = ndt_cdr(sexp);
         NDT_OBJECT* args = NULL;
         int i = 0;
