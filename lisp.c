@@ -21,7 +21,8 @@
     * status quo
     * cons arguments into temp (reversed) args list, then reverse (loop, cons again)
     * destructive eval: don't duplicate but remove uneeded stuff so that eval returns the same structure as stmt with replaced content (or something new)
-- eval implementation of sum / prod etc. with foldl (-> foldl can be implemented with a loop rather then with recursion!!, then implement binary sum, prod, etc => ndt_sum(NDT_OBJECT* a, NDT_OBJECT* b)), see: http://codereview.stackexchange.com/questions/1803/scheme-sicp-ex-2-39-reverse-in-terms-of-fold-right-and-fold-left, http://codereview.stackexchange.com/questions/1700/scheme-sicp-ex-2-27-deep-reverse?rq=1
+- eval implementation of sum / prod etc. with foldl (-> foldl can be implemented with a loop rather then with recursion!!, then implement binary sum, prod, etc => ndt_sum(NDT_OBJECT* a, NDT_OBJECT* b)), see: http://codereview.stackexchange.com/questions/1803/scheme-sicp-ex-2-39-reverse-in-terms-of-fold-right-and-fold-left, http://codereview.stackexchange.com/questions/1700/scheme-sicp-ex-2-27-deep-reverse?rq=1, https://github.com/petermichaux/bootstrap-scheme/blob/v0.21/scheme.c,
+http://michaux.ca/articles/scheme-from-scratch-bootstrap-v0_1-integers
 - implement COND special form => and if, when
 - handle symbols case invariant
 - implement: pair? null? etc.
