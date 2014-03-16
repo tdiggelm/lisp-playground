@@ -26,7 +26,9 @@ http://michaux.ca/articles/scheme-from-scratch-bootstrap-v0_1-integers
 - implement COND special form => and if, when
 - handle symbols case invariant
 - implement: pair? null? etc.
-- implement true / false => use scheme style #t, #f
+- implement true / false => use scheme style #t, #f => singleton (when typed #t return singleton true object)
+- empty list / nil => singleton
+- implement special forms / builtin symbols as singleton => QUOTE, #t, #f, etc. then use e.g. SEXP(QUOTE, STR("hello"), NIL) => remove LIST macro and ass SEXP macro, QUOTE macro returns singleton quote symbol
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
@@ -260,6 +262,7 @@ NDT_OBJECT* ndt_append(NDT_OBJECT* sexp1, NDT_OBJECT* sexp2)
     return sexp1;
 }
 
+// TODO: see https://github.com/petermichaux/bootstrap-scheme/blob/v0.6/scheme.c#L418 to simplify print
 void __ndt_print(const NDT_OBJECT* obj, int print_bracket)
 {
     if (obj == NULL) {
@@ -352,7 +355,7 @@ NDT_OBJECT* ndt_list(const NDT_OBJECT* sexp)
     }
 }
 
-// implement as binary function then use foldl to compute sum
+// TODO: implement as binary function then use foldl to compute sum
 NDT_OBJECT* ndt_sum(const NDT_OBJECT* sexp)
 {
     if (ndt_is_nil(sexp)) {
@@ -415,6 +418,7 @@ const static NDT_FUNC list_fn = {NDT_TYPE_FUNC, "list", &ndt_list};
 const static NDT_FUNC apply_fn = {NDT_TYPE_FUNC, "apply", &ndt_apply};
 const static NDT_FUNC map_fn = {NDT_TYPE_FUNC, "map", &ndt_map};
 
+// TODO: add symbols to hash-table for quick look-up
 const NDT_OBJECT* ndt_lookup(const char* symbol)
 {
     if (strcmp(symbol, "+") == 0) { // use hashtable for lut
