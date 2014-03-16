@@ -30,7 +30,7 @@ http://michaux.ca/articles/scheme-from-scratch-bootstrap-v0_1-integers
 - empty list / nil => singleton
 - implement special forms / builtin symbols as singleton => QUOTE, #t, #f, etc. then use e.g. SEXP(QUOTE, STR("hello"), NIL) => remove LIST macro and ass SEXP macro, QUOTE macro returns singleton quote symbol
 - add a VM struct that holds the environment and any other open pointers (e.g. nathan dataspace handle)
-- see tailcall: https://github.com/petermichaux/bootstrap-scheme/blob/v0.10/scheme.c#L715 for tail call optimization
+- see tailcall: https://github.com/petermichaux/bootstrap-scheme/blob/v0.10/scheme.c#L715 for tail call optimization, https://www.gnu.org/software/guile/manual/html_node/Tail-Calls.html
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
