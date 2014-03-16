@@ -21,7 +21,9 @@
     * status quo
     * cons arguments into temp (reversed) args list, then reverse (loop, cons again)
     * destructive eval: don't duplicate but remove uneeded stuff so that eval returns the same structure as stmt with replaced content (or something new)
-- eval implementation of sum / prod etc. with foldl (-> foldl can be implemented with a loop rather then with recursion!!, then implement binary sum, prod, etc => ndt_sum(NDT_OBJECT* a, NDT_OBJECT* b)), see: http://codereview.stackexchange.com/questions/1803/scheme-sicp-ex-2-39-reverse-in-terms-of-fold-right-and-fold-left
+- eval implementation of sum / prod etc. with foldl (-> foldl can be implemented with a loop rather then with recursion!!, then implement binary sum, prod, etc => ndt_sum(NDT_OBJECT* a, NDT_OBJECT* b)), see: http://codereview.stackexchange.com/questions/1803/scheme-sicp-ex-2-39-reverse-in-terms-of-fold-right-and-fold-left, http://codereview.stackexchange.com/questions/1700/scheme-sicp-ex-2-27-deep-reverse?rq=1
+- implement COND special form => and if, when
+- handle symbols case invariant
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
@@ -428,6 +430,7 @@ const NDT_OBJECT* ndt_lookup(const char* symbol)
     }
 }
 
+// eval: destructive eval => in-place eval of list cars
 NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
 {
     if (ndt_is_decimal(sexp) || ndt_is_integer(sexp) || ndt_is_string(sexp)) {
