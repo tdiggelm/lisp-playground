@@ -39,6 +39,7 @@ http://michaux.ca/articles/scheme-from-scratch-bootstrap-v0_1-integers
               (map proc (cdr items)))))
 - support tuples and vectors?: (vector obj ...), (tuple obj ...) => tuples are immutable, vectors can only contain the same types? => use for returning from nathan, literals: _(...) => (tuple ...), $(...) => (vector ...)
 - support lambda* for handling optional and keyword arguments: http://www.gnu.org/software/guile/manual/html_node/lambda_002a-and-define_002a.html#lambda_002a-and-define_002a
+- for built-in procedures use static variable directly instead of making symbol look-up: e.g. EVAL(LIST(PROC_SUM, INT(1), INT(2))) instead of EVAL(LIST(SYM("+", INT(1), INT(2))))
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
