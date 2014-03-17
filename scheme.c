@@ -603,7 +603,7 @@ int main()
     EVAL(LIST(SYM("map"), SYM("*"),
         LIST(SYM("map"), SYM("+"), 
             LIST(SYM("list"), INT(1), INT(2), INT(3)),
-            LIST(SYM("list"), DEC(7), DEC(8), DEC(9))
+            LIST(SYM("quote"), LIST(DEC(7), DEC(8), DEC(9)))
         )
     ));
 }
