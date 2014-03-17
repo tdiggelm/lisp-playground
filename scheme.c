@@ -37,6 +37,8 @@ http://michaux.ca/articles/scheme-from-scratch-bootstrap-v0_1-integers
         '()
         (cons (proc (car items))
               (map proc (cdr items)))))
+- support tuples and vectors?: (vector obj ...), (tuple obj ...) => tuples are immutable, vectors can only contain the same types? => use for returning from nathan, literals: _(...) => (tuple ...), $(...) => (vector ...)
+- support lambda* for handling optional and keyword arguments: http://www.gnu.org/software/guile/manual/html_node/lambda_002a-and-define_002a.html#lambda_002a-and-define_002a
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
@@ -270,8 +272,23 @@ NDT_OBJECT* ndt_append(NDT_OBJECT* sexp1, NDT_OBJECT* sexp2)
     return sexp1;
 }
 
-// TODO: see https://github.com/petermichaux/bootstrap-scheme/blob/v0.6/scheme.c#L418 to simplify print
-void __ndt_print(const NDT_OBJECT* obj, int print_bracket)
+void ndt_print(const NDT_OBJECT* obj);
+
+void print_pair(const NDT_OBJECT* obj)
+{
+    ndt_print(ndt_car(obj));
+    if (!ndt_is_nil(ndt_cdr(obj))) {
+        if (ndt_is_cons(ndt_cdr(obj))) {
+            printf(" ");
+            print_pair(ndt_cdr(obj));   
+        } else {
+            printf(" . ");
+            ndt_print(ndt_cdr(obj));   
+        }
+    }
+}
+
+void ndt_print(const NDT_OBJECT* obj)
 {
     if (obj == NULL) {
         printf("nil");
@@ -302,23 +319,15 @@ void __ndt_print(const NDT_OBJECT* obj, int print_bracket)
         case NDT_TYPE_PAIR: {
 #ifdef PRINT_CONS
             printf("(");
-            __ndt_print(ndt_car(obj), 0);
+            ndt_print(ndt_car(obj));
             printf(" . ");
-            __ndt_print(ndt_cdr(obj), 0);
+            ndt_print(ndt_cdr(obj));
             printf(")");
             break;
 #else
-            if (print_bracket) printf("(");
-            __ndt_print(ndt_car(obj), 1);
-            if (!ndt_is_nil(ndt_cdr(obj))) {
-                if (ndt_is_cons(ndt_cdr(obj))) {
-                    printf(" ");
-                } else {
-                    printf(" . ");
-                }
-                __ndt_print(ndt_cdr(obj), 0);   
-            }
-            if (print_bracket) printf(")");
+            printf("(");
+            print_pair(obj);
+            printf(")");
             break;
 #endif
         }
@@ -328,9 +337,9 @@ void __ndt_print(const NDT_OBJECT* obj, int print_bracket)
     }
 }
 
-void ndt_print(const NDT_OBJECT* obj)
+void ndt_println(const NDT_OBJECT* obj)
 {
-    __ndt_print(obj, 1);
+    ndt_print(obj);
     printf("\n");
 }
 
@@ -501,17 +510,17 @@ NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
 #define EVAL(stmt) do { \
     NDT_OBJECT* obj = (stmt); \
     printf("> "); \
-    ndt_print(obj); \
+    ndt_println(obj); \
     NDT_OBJECT* ret = ndt_eval(obj); \
     ndt_release(obj); \
-    ndt_print(ret); \
+    ndt_println(ret); \
     ndt_release(ret); \
 } while(0)
     
 #define PRINT(stmt) do { \
     NDT_OBJECT* obj = (stmt); \
     printf("> "); \
-    ndt_print(obj); \
+    ndt_println(obj); \
     ndt_release(obj); \
 } while(0)
 
