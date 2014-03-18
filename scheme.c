@@ -113,7 +113,7 @@ NDT_OBJECT* ndt_make_decimal(double ndt_decimal)
     return (NDT_OBJECT*)obj;
 }
 
-NDT_OBJECT* ndt_make_cons(const NDT_OBJECT* ndt_car, const NDT_OBJECT* ndt_cdr)
+NDT_OBJECT* ndt_make_pair(const NDT_OBJECT* ndt_car, const NDT_OBJECT* ndt_cdr)
 {
     NDT_PAIR* obj = malloc(sizeof(NDT_PAIR));
     obj->type = NDT_TYPE_PAIR;
@@ -196,7 +196,7 @@ int ndt_is_func(const NDT_OBJECT* obj)
     return (obj != NULL && obj->type == NDT_TYPE_FUNC);
 }
 
-int ndt_is_cons(const NDT_OBJECT* obj)
+int ndt_is_pair(const NDT_OBJECT* obj)
 {
     return (obj != NULL && obj->type == NDT_TYPE_PAIR);
 }
@@ -253,7 +253,7 @@ NDT_OBJECT* ndt_dup(const NDT_OBJECT* obj)
             return memcpy(dup, obj, sizeof(NDT_FUNC));
         }
         case NDT_TYPE_PAIR: {
-            return ndt_make_cons(ndt_dup(ndt_car(obj)), ndt_dup(ndt_cdr(obj)));
+            return ndt_make_pair(ndt_dup(ndt_car(obj)), ndt_dup(ndt_cdr(obj)));
         }
         default: {
             assert(!"unkown type in ndt_dup\n");
@@ -280,7 +280,7 @@ void print_pair(const NDT_OBJECT* obj)
 {
     ndt_print(ndt_car(obj));
     if (!ndt_is_nil(ndt_cdr(obj))) {
-        if (ndt_is_cons(ndt_cdr(obj))) {
+        if (ndt_is_pair(ndt_cdr(obj))) {
             printf(" ");
             print_pair(ndt_cdr(obj));   
         } else {
@@ -354,8 +354,8 @@ NDT_OBJECT* ndt_map(const NDT_OBJECT* sexp)
 {
     const NDT_OBJECT* curr = ndt_cdr(sexp);
     NDT_OBJECT* result = NULL;
-    while(curr != NULL && ndt_is_cons(curr)) {      
-        result = ndt_append(result, ndt_make_cons(
+    while(curr != NULL && ndt_is_pair(curr)) {      
+        result = ndt_append(result, ndt_make_pair(
             ndt_call(ndt_car(sexp), ndt_car(curr)), NULL));
         curr = ndt_cdr(curr);
     }
@@ -366,8 +366,8 @@ NDT_OBJECT* ndt_list(const NDT_OBJECT* sexp)
 {
     if (ndt_is_nil(sexp)) {
         return NULL;
-    } else if (ndt_is_cons(sexp)) {
-        return ndt_make_cons(ndt_list(ndt_car(sexp)),
+    } else if (ndt_is_pair(sexp)) {
+        return ndt_make_pair(ndt_list(ndt_car(sexp)),
             ndt_list(ndt_cdr(sexp)));
     } else {
         return ndt_dup(sexp); 
@@ -381,7 +381,7 @@ NDT_OBJECT* ndt_sum(const NDT_OBJECT* sexp)
         return ndt_make_integer(0);
     } else if (ndt_is_integer(sexp) || ndt_is_decimal(sexp)) {
         return ndt_dup(sexp);
-    } else if (ndt_is_cons(sexp)) {
+    } else if (ndt_is_pair(sexp)) {
         const NDT_OBJECT* a = ndt_car(sexp);
         NDT_OBJECT* b = ndt_sum(ndt_cdr(sexp));
         NDT_OBJECT* sum;
@@ -409,7 +409,7 @@ NDT_OBJECT* ndt_product(const NDT_OBJECT* sexp)
         return ndt_make_integer(0);
     } else if (ndt_is_integer(sexp) || ndt_is_decimal(sexp)) {
         return ndt_dup(sexp);
-    } else if (ndt_is_cons(sexp)) {
+    } else if (ndt_is_pair(sexp)) {
         const NDT_OBJECT* a = ndt_car(sexp);
         NDT_OBJECT* b = ndt_sum(ndt_cdr(sexp));
         NDT_OBJECT* sum;
@@ -460,12 +460,12 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp);
 
 NDT_OBJECT* eval_arguments(const NDT_OBJECT* sexp)
 {
-    assert(sexp == NULL || ndt_is_cons(sexp));
+    assert(sexp == NULL || ndt_is_pair(sexp));
     
     if (sexp == NULL) {
         return NULL;
     } else {
-        return ndt_make_cons(ndt_eval(ndt_car(sexp)),
+        return ndt_make_pair(ndt_eval(ndt_car(sexp)),
             eval_arguments(ndt_cdr(sexp)));
     }
 }
@@ -478,7 +478,7 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
     } else if (ndt_is_symbol(sexp)) {
         return ndt_dup(ndt_lookup(ndt_symbol(sexp)));
         // TODO: decide whether to throw here or return nil when lookup failed
-    } else if (ndt_is_cons(sexp) && ndt_is_symbol(ndt_car(sexp))) {
+    } else if (ndt_is_pair(sexp) && ndt_is_symbol(ndt_car(sexp))) {
         
         // special procedure quote
         if (strcmp(ndt_symbol(ndt_car(sexp)), "quote") == 0) {
@@ -509,9 +509,9 @@ NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
 {
     if (arr == NULL) return NULL;
     if (n > 1) {
-        return ndt_make_cons(arr[0], ndt_make_list(&arr[1], n-1));
+        return ndt_make_pair(arr[0], ndt_make_list(&arr[1], n-1));
     } else {
-        return ndt_make_cons(arr[0], NULL);
+        return ndt_make_pair(arr[0], NULL);
     }
 }
 
@@ -533,7 +533,7 @@ NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
 } while(0)
 
 #define APPEND(x, y) ndt_append(x, y)
-#define CONS(x,y) ndt_make_cons(x, y)
+#define CONS(x,y) ndt_make_pair(x, y)
 #define SYM(x) ndt_make_symbol(x)
 #define STR(x) ndt_make_string(x)
 #define INT(x) ndt_make_integer(x)
@@ -565,16 +565,16 @@ int main()
     );
     
     // (list (+ 1 2))
-    EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(1), ndt_make_cons(ndt_make_integer(2), NULL))), NULL)));
+    EVAL(ndt_make_pair(ndt_make_symbol("list"), ndt_make_pair(ndt_make_pair(ndt_make_symbol("+"), ndt_make_pair(ndt_make_integer(1), ndt_make_pair(ndt_make_integer(2), NULL))), NULL)));
     
     // (list "Hello World!" 3.14159 100)
-    EVAL(ndt_make_cons(ndt_make_symbol("list"), ndt_make_cons(ndt_make_string("Hello World!"), ndt_make_cons(ndt_make_decimal(3.14159), ndt_make_cons(ndt_make_integer(100), NULL)))));
+    EVAL(ndt_make_pair(ndt_make_symbol("list"), ndt_make_pair(ndt_make_string("Hello World!"), ndt_make_pair(ndt_make_decimal(3.14159), ndt_make_pair(ndt_make_integer(100), NULL)))));
                 
     // (+ 5 10 20)
-    EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_integer(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
+    EVAL(ndt_make_pair(ndt_make_symbol("+"), ndt_make_pair(ndt_make_integer(5), ndt_make_pair(ndt_make_integer(10), ndt_make_pair(ndt_make_integer(20), NULL)))));
     
     // (+ 5.0 10 20)
-    EVAL(ndt_make_cons(ndt_make_symbol("+"), ndt_make_cons(ndt_make_decimal(5), ndt_make_cons(ndt_make_integer(10), ndt_make_cons(ndt_make_integer(20), NULL)))));
+    EVAL(ndt_make_pair(ndt_make_symbol("+"), ndt_make_pair(ndt_make_decimal(5), ndt_make_pair(ndt_make_integer(10), ndt_make_pair(ndt_make_integer(20), NULL)))));
     
     // 123
     EVAL(ndt_make_integer(123));
