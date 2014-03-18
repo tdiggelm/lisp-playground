@@ -456,6 +456,20 @@ const NDT_OBJECT* ndt_lookup(const char* symbol)
     }
 }
 
+NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp);
+
+NDT_OBJECT* eval_arguments(const NDT_OBJECT* sexp)
+{
+    assert(sexp == NULL || ndt_is_cons(sexp));
+    
+    if (sexp == NULL) {
+        return NULL;
+    } else {
+        return ndt_make_cons(ndt_eval(ndt_car(sexp)),
+            eval_arguments(ndt_cdr(sexp)));
+    }
+}
+
 // eval: destructive eval => in-place eval of list cars
 NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
 {
@@ -475,15 +489,7 @@ NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
         // TODO: check if is func or lambda, throw otherwise => better: let ndt_call decide what to do when symbol != callable => e.g. return error there
         
         // evaluate arguments
-        // TODO: compare with https://github.com/petermichaux/bootstrap-scheme/blob/v0.13/scheme.c#L1038
-        const NDT_OBJECT* curr = ndt_cdr(sexp);
-        NDT_OBJECT* args = NULL;
-        int i = 0;
-        while(curr != NULL && ndt_is_cons(curr)) {      
-            args = ndt_append(args, ndt_make_cons(
-                ndt_eval(ndt_car(curr)), NULL));
-            curr = ndt_cdr(curr);
-        }
+        NDT_OBJECT* args = eval_arguments(ndt_cdr(sexp));
         
         // evaluate function
         NDT_OBJECT* result;
@@ -538,7 +544,7 @@ NDT_OBJECT* ndt_make_list(const NDT_OBJECT* arr[], size_t n)
 })
    
 int main()
-{    
+{
     // print complex structure        
     PRINT(
         LIST(
