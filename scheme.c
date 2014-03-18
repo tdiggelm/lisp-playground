@@ -473,6 +473,7 @@ NDT_OBJECT* eval_arguments(const NDT_OBJECT* sexp)
 // eval: destructive eval => in-place eval of list cars
 NDT_OBJECT* ndt_eval(const NDT_OBJECT* sexp)
 {
+    // also handle eval of procedures => self-evaluating
     if (ndt_is_decimal(sexp) || ndt_is_integer(sexp) || ndt_is_string(sexp)) {
         return ndt_dup(sexp);
     } else if (ndt_is_symbol(sexp)) {
