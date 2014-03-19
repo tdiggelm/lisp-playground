@@ -42,6 +42,7 @@ http://michaux.ca/articles/scheme-from-scratch-bootstrap-v0_1-integers
 - for built-in procedures use static variable directly instead of making symbol look-up: e.g. EVAL(LIST(PROC_SUM, INT(1), INT(2))) instead of EVAL(LIST(SYM("+", INT(1), INT(2))))
 - support special syntax for infix processing { 12 + 33 * 45 }?
 - release: when nil, #f, #t or built-in proc don't free (const)
+- support futures, parallel for, map, reduce, etc.
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
