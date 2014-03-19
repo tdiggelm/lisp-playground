@@ -43,6 +43,7 @@ http://michaux.ca/articles/scheme-from-scratch-bootstrap-v0_1-integers
 - support special syntax for infix processing { 12 + 33 * 45 }?
 - release: when nil, #f, #t or built-in proc don't free (const)
 - support futures, parallel for, map, reduce, etc.
+- eval libgc garbage collector
 */
 
 typedef enum {NDT_TYPE_PAIR, NDT_TYPE_DECIMAL, NDT_TYPE_INTEGER, NDT_TYPE_SYMBOL, NDT_TYPE_STRING, NDT_TYPE_FUNC} NDT_TYPE;
