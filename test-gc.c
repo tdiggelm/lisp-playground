@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <gc/gc.h>
  
-// needs sudo apt-get install libgc-dev
+// needs sudo apt-get install libgc-dev,
+// see here: http://manpages.ubuntu.com/manpages/karmic/man3/gc.3.html.
  
 int main(void)
 {
