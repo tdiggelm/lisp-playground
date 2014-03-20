@@ -3,7 +3,7 @@
 #include <gc/gc.h>
  
 // needs sudo apt-get install libgc-dev,
-// see here: http://manpages.ubuntu.com/manpages/karmic/man3/gc.3.html.
+// see here: http://manpages.ubuntu.com/manpages/karmic/man3/gc.3.html, http://www.linuxjournal.com/article/6679.
  
 int main(void)
 {
